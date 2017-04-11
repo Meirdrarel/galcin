@@ -74,3 +74,5 @@ write_fits(xcen, ycen, pos_angl, incl, charac_rad, center_bright, rtrunc, oversa
 # plt.colorbar()
 # plt.show()
 
+# useless comment
+
