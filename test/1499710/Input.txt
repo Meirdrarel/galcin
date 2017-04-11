@@ -1,2 +1,0 @@
-#      gal        x        y       pa        i    vs     vm     d   sig psfx psfz  smooth
-   1499710    15.00    15.31    19.00    67.05   0.0     80   2.0     0  4.1   49       2

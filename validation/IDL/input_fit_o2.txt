@@ -1,3 +1,0 @@
-#           gal     x   y    pa     i  vs    vm     d    sig  psfx    psfz   smooth
-   	test_IDL_o2    80  30    30    45  20    20    28     20     4       0        2
- test_python_o2    80  30    30    45  20    20    28     20     4       0        2
