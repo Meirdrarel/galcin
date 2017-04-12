@@ -6,3 +6,11 @@ validation
 __pycache__
 create_flux_im.py
 create_vel_model.py
+flux_ld.fits
+Input_fit.txt
+evel.fits
+vel.fits
+flux_hd.fits
+modelV_python.fits
+flux.fits
+

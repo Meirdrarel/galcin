@@ -21,7 +21,7 @@ class Image:
         self.length = self.header['NAXIS2']
         self.size = np.array(np.shape(self.data))
         self.len = self.length*self.high
-        self.oversample = None
+        self.oversample = 1
         self.mask = self.data != 0
 
 

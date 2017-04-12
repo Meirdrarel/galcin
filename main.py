@@ -6,12 +6,14 @@ import argparse
 import os
 import time
 import numpy as np
-from astropy.io import ascii
+from astropy.io import ascii, fits
+import matplotlib.pyplot as plt
 
 # Program files
 from PSF import PSF
 from Images import Image, ImageOverSamp
 import velocity_model as vm
+from Model2D import Model2D
 from use_mpfit import use_mpfit
 
 
@@ -23,9 +25,9 @@ parser.add_argument('fits_ld')
 parser.add_argument('fits_vel')
 parser.add_argument('fits_evel')
 parser.add_argument('-hd', '--high', dest="fits_hd")
-parser.add_argument('-v', '--verbose', default=False, dest='verbose')
-# parser.add_argument('-slope', dest="slope", type=float, const=0)
-
+parser.add_argument('-v', '--verbose', default=False, action='store_true', dest='verbose')
+parser.add_argument('-slope', dest="slope", type=float, default=0.)
+parser.add_argument('-psf', dest='psf', default=None)
 args = parser.parse_args()
 
 # ADD NEW MODEL IN THIS DICTIONARY:
@@ -39,10 +41,14 @@ try:
         flux_hd = ImageOverSamp(args.fits_ld, params[7])
     vel = Image(args.fits_vel)
     errvel = Image(args.fits_evel)
-    img_psf = None
 except FileNotFoundError:
-    print("File ".format(FileNotFoundError))
+    print("File not found ")
     sys.exit()
+
+if args.psf:
+    img_psf = fits.getdata(args.psf)
+else:
+    img_psf = None
 
 if args.verbose:
     quiet = 0
@@ -51,6 +57,7 @@ else:
 
 model_name = {'exp': vm.exponential_velocity, 'flat': vm.flat_velocity, 'arctan': vm.arctan_velocity}
 
-psf = PSF(flux_hd, img_psf, fwhm=np.sqrt(params[8]**2+params[10]**2))
+psf = PSF(flux_hd, img_psf, fwhm=np.sqrt(params[9]**2+params[11]**2))
 
-use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], slope=0, quiet=quiet)
+
+use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], slope=args.slope, quiet=quiet)
