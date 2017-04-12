@@ -4,6 +4,7 @@ from numpy.fft import fftshift, fft2, ifft2
 from Images import Image
 import matplotlib.pyplot as plt
 
+
 class PSF:
 
     def __init__(self, flux_hd, img_psf=None, fwhm=3):

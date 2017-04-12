@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from PSF import PSF
+from astropy.io import fits
 
 
 def sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=(240, 240)):
@@ -41,24 +41,42 @@ def rebin_data(data, new_bin):
 
     data2 = data.reshape(int(data.shape[0] / new_bin), new_bin, int(data.shape[1] / new_bin), new_bin)
     
-    return np.average(data2, axis=(1, 3))
+    return np.average(data2, axis=(1, 3))#!/usr/bin/env python
+
+# Pyhton library
+import sys
+import os
+import time
+import numpy as np
+
+# Program files
+import tools
+from astropy.io import ascii
+from model_2D import Model2D
+from PSF import PSF
+from Images import Image, ImageOverSamp
+import velocity_model as vm
+import cap_mpfit as mpfit
 
 
-def exponential_disk_intensity(xcen, ycen, pos_angl, incl, rd, center_bright, rtrunc, im_size):
-    """
-    
-    :param PSF psf:
-    :param float center_bright:
-    :param int rtrunc:
-    :param int oversample:
-    """
-    r, theta = sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=im_size)
 
-    if rd != 0:
-        flux = center_bright * np.exp(- np.abs(r) / rd)
-    else:
-        flux = center_bright * np.exp(0 * r)
+def write_fits(xcen, ycen, pos_angl, incl, syst_vel, vmax, rd, sig0, data, filename, oversample=1, chi2r=None, dof=None, mask=None):
 
-    flux[np.where(r > rtrunc)] = 0.
+    if mask:
+        data[mask] = float('nan')
 
-    return flux
+    hdu = fits.PrimaryHDU(data=data)
+    hdu.header.append(('PA', pos_angl, 'position angle in degree'))
+    hdu.header.append(('INCL', incl, 'inclination in degree'))
+    hdu.header.append(('XCEN', xcen / oversample, 'center abscissa in pixel'))
+    hdu.header.append(('YCEN', ycen / oversample, 'center ordinate in pixel'))
+    hdu.header.append(('RD', rd / oversample, 'characteristic radius in pixel'))
+    hdu.header.append(('MAX_VEL', vmax, 'maximum velocity in km/s'))
+    hdu.header.append(('SYST_VEL', syst_vel, 'systemic velocity in km/s'))
+    hdu.header.append(('SIG0', sig0, 'dispersion velocity in km/s'))
+    if chi2r:
+        hdu.header.append(('CHI2R', chi2r, 'reduced chi square'))
+        hdu.header.append(('DOF', dof, 'degree of freedom'))
+
+    hdulist = fits.HDUList(hdu)
+    hdulist.writeto(filename + '.fits', checksum=True, overwrite=True)

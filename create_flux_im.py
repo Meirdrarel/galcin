@@ -1,78 +1,92 @@
 #! usr/bin/env python
+import os
 import numpy as np
 import tools
-from astropy.io import fits
 import matplotlib.pyplot as plt
-import velocity_model as vm
-from model_2D import Model2D
 from PSF import PSF
-from Images import ImageOverSamp, Image
-
-# Correspond to a final image size : 60*60 pixels
-pos_angl = 0
-incl = 45.
-xcen = 60
-ycen = 50
-center_bright = 1e3
-vmax = 100.
-syst_vel = 40.
-sig0 = 20.
-rtrunc = 30
-charac_rad = 10
-slope = 0.
-oversample = 1
-im_size = np.array([120, 120])
-# faire la somme quadratique des deux
-fwhm = 4
-smooth = 2
+from Images import Image
 
 
-def write_fits(xcen, ycen, pos_angl, incl, rd, center_bright, rtrunc, oversample, syst_vel, sig0, vmax, data, filename):
+def exponential_disk_intensity(xcen, ycen, pos_angl, incl, rd, center_bright, rtrunc, im_size):
+    """
+    
+    :param float xcen: 
+    :param float ycen: 
+    :param float pos_angl: 
+    :param float incl: 
+    :param float rd: 
+    :param float center_bright: 
+    :param float rtrunc: 
+    :param ndarray im_size: 
+    :return: 
+    """
+    r, theta = tools.sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=im_size)
 
-    data[np.where(data == 0)] = float('nan')
+    if rd != 0:
+        flux = center_bright * np.exp(- np.abs(r) / rd)
+    else:
+        flux = center_bright * np.exp(0 * r)
 
-    hdu = fits.PrimaryHDU(data=data)
-    hdu.header.append(('PA', pos_angl, 'position angle in degree'))
-    hdu.header.append(('INCL', incl, 'inclination in degree'))
-    hdu.header.append(('XCEN', xcen / oversample, 'center abscissa in pixel'))
-    hdu.header.append(('YCEN', ycen / oversample, 'center ordinate in pixel'))
-    hdu.header.append(('RD', rd / oversample, 'characteristic radius in pixel'))
-    hdu.header.append(('MAX_VEL', vmax, 'maximum velocity in km/s'))
-    hdu.header.append(('SYST_VEL', syst_vel, 'systemic velocity in km/s'))
-    hdu.header.append(('SIG0', sig0, 'dispersion velocity in km/s'))
-    hdu.header.append(('RTRUNC', rtrunc, 'truncated radius'))
-    hdu.header.append(('B0', center_bright, ''))
-    hdulist = fits.HDUList(hdu)
-    hdulist.writeto(filename + '.fits', checksum=True, overwrite=True)
+    flux[np.where(r > rtrunc)] = 0.
 
-# im_psf = np.zeros((60, 60))
-# im_psf[30, 30] = 1
-# # im_psf[0, 59] = 1
-# # im_psf[59, 0] = 1
-# # im_psf[59, 59] = 1
+    return flux
 
-# Test expon1ential disc brightness
-flux = tools.exponential_disk_intensity(xcen, ycen, pos_angl, incl, charac_rad, center_bright, rtrunc, im_size)
-write_fits(xcen, ycen, pos_angl, incl, charac_rad, center_bright, rtrunc, oversample, syst_vel, sig0, vmax, flux, 'validation/flux2')
 
-fluxC = Image('validation/flux2.fits')
-psf = PSF(fluxC, img_psf=None, fwhm=np.sqrt(fwhm**2+smooth**2))
+def create_map_flux(pos_angl, incl, xcen, ycen, vmax, syst_vel, sig0, rtrunc, charac_rad, fwhm, size, plot=False):
+    """
+    
+    :param float pos_angl: 
+    :param float incl: 
+    :param float xcen: 
+    :param float ycen: 
+    :param float vmax: 
+    :param float syst_vel: 
+    :param float sig0: 
+    :param int rtrunc: 
+    :param float charac_rad: 
+    :param float fwhm: 
+    :param Union[ndarray,Iterable] size: 
+    :param bool plot: 
+    :return: 
+    """
 
-flux_conv = psf.convolution(fluxC.data)
-flux_conv[np.logical_not(fluxC.mask)] = float('nan')
+    im_size = np.array(size)
+    center_bright = 1e3
 
-write_fits(xcen, ycen, pos_angl, incl, charac_rad, center_bright, rtrunc, oversample, syst_vel, sig0, vmax, flux_conv, 'validation/flux_conv2')
+    flux = exponential_disk_intensity(xcen, ycen, pos_angl, incl, charac_rad, center_bright, rtrunc, im_size)
+    tools.write_fits(xcen, ycen, pos_angl, incl, charac_rad, oversample, syst_vel, sig0, vmax, flux, '/tmp/flux_tmp')
 
-# plt.figure(1)
-# plt.imshow(fluxC.data, cmap='nipy_spectral')
-# plt.colorbar()
-# plt.figure(2)
-# plt.imshow(flux_conv, cmap='nipy_spectral')
-# plt.colorbar()
-# plt.figure(3)
-# plt.imshow(truc.data-truc_conv, cmap='nipy_spectral')
-# plt.colorbar()
-# plt.show()
+    flux_tmp = Image('/tmp/flux_tmp.fits')
+    psf = PSF(flux_tmp, img_psf=None, fwhm=np.sqrt(fwhm**2+smooth**2))
 
-# useless comment
+    flux_conv = psf.convolution(flux_tmp.data)
+    flux_conv[np.logical_not(flux_tmp.mask)] = float('nan')
 
+    tools.write_fits(xcen, ycen, pos_angl, incl, incl, syst_vel, vmax, charac_rad, sig0, flux_conv, 'validation/flux_conv2')
+    os.remove('/tmp/flux_tmp.fits')
+
+    if plot is True:
+        plt.figure()
+        plt.imshow(flux_conv, cmap='nipy_spectral')
+        plt.colorbar()
+        plt.show()
+
+if __name__ == '__main__':
+    pos_angl = 0
+    incl = 45.
+    xcen = 60
+    ycen = 50
+    vmax = 100.
+    syst_vel = 40.
+    sig0 = 20.
+    rtrunc = 30
+    charac_rad = 10
+    slope = 0.
+    oversample = 1
+    size = np.array([120, 120])
+
+    # do a quadratic sum of both
+    fwhm = 4
+    smooth = 2
+
+    create_map_flux(pos_angl, incl, xcen, ycen, vmax, syst_vel, sig0, rtrunc, charac_rad, np.sqrt(fwhm**2+smooth**2), size)
