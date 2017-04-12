@@ -29,7 +29,7 @@ class ImageOverSamp(Image):
     def __init__(self, filename, charac_rad):
         Image.__init__(self, filename)
 
-        self.oversample = int(np.ceil(10 / charac_rad))
+        self.oversample = int(np.ceil(8 / charac_rad))
 
         x = np.linspace(0, self.length, self.length)
         y = np.linspace(0, self.high, self.high)

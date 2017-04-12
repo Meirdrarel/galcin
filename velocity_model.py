@@ -9,7 +9,7 @@ def exponential_velocity(r, rt, vmax):
     """
     Velocity function for an exponential disk
 
-    :param array r: 2D array which contain the radius
+    :param Union[ndarray, Iterable] r: 2D array which contain the radius
     :param int rt: radius at which the maximum velocity is reached (arcsec)
     :param float vmax: Maximum velocity of the model
     """

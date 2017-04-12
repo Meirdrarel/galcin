@@ -5,23 +5,30 @@ import sys
 import os
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Program files
-import tools
-from astropy.io import ascii
 from Model2D import Model2D
-from PSF import PSF
-from Images import Image, ImageOverSamp
-import velocity_model as vm
+# import velocity_model as vm
 import cap_mpfit as mpfit
 
 
-def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, slope=0):
+def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, slope=0, quiet=1):
+    """
+    
+    :param PSF psf: 
+    :param Image flux_ld: 
+    :param Image flux_hd: 
+    :param Image vel: 
+    :param Image errvel: 
+    :param Union[ndarray, Iterable] params: 
+    :param model_name: 
+    :param float slope: 
+    :param int quiet: 
+    :return: 
     """
 
-    """
-
-    gal, xcen, ycen, pos_angl, incl, syst_vel, vmax, charac_rad, sig0, fwhm, psfz, smooth = params[1:]
+    gal, xcen, ycen, pos_angl, incl, syst_vel, vmax, charac_rad, sig0, fwhm, psfz, smooth = params
 
     model = Model2D(flux_ld, flux_hd, sig0, slope=slope)
     model.set_parameters(xcen, ycen, pos_angl, incl, syst_vel, vmax, charac_rad, flux_hd)
@@ -75,19 +82,22 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, slope=0):
 
     print('\nstart fit with mpfit')
     t1 = time.time()
-    model_fit = mpfit.mpfit(func_fit, parinfo=parinfo, functkw=funckw, autoderivative=1, gtol=1e-10, ftol=1e-5, xtol=1e-10, quiet=0)
+
+    model_fit = mpfit.mpfit(func_fit, parinfo=parinfo, functkw=funckw, autoderivative=1, gtol=1e-10, ftol=1e-10, xtol=1e-10, quiet=quiet)
+
     t2 = time.time()
     print('fit done in: {} s'.format(t2-t1))
+
     print('fit status:', model_fit.status)
-    print('Chi2: {} DOF: {} Chi2R: {}'.format(model_fit.fnorm, model_fit.dof, model_fit.fnorm/model_fit.dof))
+    print('Chi2R: {} DOF: {}'.format(model_fit.fnorm/model_fit.dof, model_fit.dof,))
 
     print('\nx    y    pa    incl    vs    vm    d')
     print('params: {}'.format(model_fit.params))
     print('from model : {}'.format(model.get_parameter(flux_hd)))
 
-    tools.write_fits(*model_fit.params, sig0, model.vel_map, 'validation/modv', chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof)
-    tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, 'validation/resv', chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof)
-    ascii.write(model_fit.params, 'validation/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'd'])
-
-if __name__ == '__main__':
-    use_mpfit()
+    # tools.write_fits(*model_fit.params, sig0, model.vel_map, 'validation/modv', chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof)
+    # tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, 'validation/resv', chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof)
+    # ascii.write(model_fit.params, 'validation/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'd'])
+    plt.figure()
+    plt.imshow(model.vel_map, cmap="nipy_spectral")
+    plt.show()

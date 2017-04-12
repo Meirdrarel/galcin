@@ -41,23 +41,7 @@ def rebin_data(data, new_bin):
 
     data2 = data.reshape(int(data.shape[0] / new_bin), new_bin, int(data.shape[1] / new_bin), new_bin)
     
-    return np.average(data2, axis=(1, 3))#!/usr/bin/env python
-
-# Pyhton library
-import sys
-import os
-import time
-import numpy as np
-
-# Program files
-import tools
-from astropy.io import ascii
-from model_2D import Model2D
-from PSF import PSF
-from Images import Image, ImageOverSamp
-import velocity_model as vm
-import cap_mpfit as mpfit
-
+    return np.average(data2, axis=(1, 3))
 
 
 def write_fits(xcen, ycen, pos_angl, incl, syst_vel, vmax, rd, sig0, data, filename, oversample=1, chi2r=None, dof=None, mask=None):
