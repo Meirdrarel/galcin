@@ -1,8 +1,5 @@
-# Python library #
 import numpy as np
 from scipy.special import i0, i1, k0, k1
-# Program files #
-# import tools
 
 
 def exponential_velocity(r, rt, vmax):

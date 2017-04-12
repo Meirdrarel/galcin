@@ -1,19 +1,11 @@
 #!/usr/bin/env python
-
-# Python library
 import sys
 import argparse
-import os
-import time
 import numpy as np
 from astropy.io import ascii, fits
-import matplotlib.pyplot as plt
-
-# Program files
 from PSF import PSF
 from Images import Image, ImageOverSamp
 import velocity_model as vm
-from Model2D import Model2D
 from use_mpfit import use_mpfit
 
 
@@ -58,6 +50,5 @@ else:
 model_name = {'exp': vm.exponential_velocity, 'flat': vm.flat_velocity, 'arctan': vm.arctan_velocity}
 
 psf = PSF(flux_hd, img_psf, fwhm=np.sqrt(params[9]**2+params[11]**2))
-
 
 use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], slope=args.slope, quiet=quiet)

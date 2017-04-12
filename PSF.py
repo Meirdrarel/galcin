@@ -2,7 +2,6 @@ import math
 import numpy as np
 from numpy.fft import fftshift, fft2, ifft2
 from Images import Image
-import matplotlib.pyplot as plt
 
 
 class PSF:

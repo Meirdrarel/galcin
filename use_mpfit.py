@@ -1,9 +1,7 @@
-#!/usr/bin/env python
-
 import time
 import numpy as np
-import matplotlib.pyplot as plt
 
+import tools
 from Model2D import Model2D
 from PSF import PSF
 import cap_mpfit as mpfit
@@ -81,7 +79,7 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, slope=0, q
     print('\nstart fit with mpfit')
     t1 = time.time()
 
-    model_fit = mpfit.mpfit(func_fit, parinfo=parinfo, functkw=funckw, autoderivative=1, gtol=1e-10, ftol=1e-10, xtol=1e-10, quiet=quiet)
+    model_fit = mpfit.mpfit(func_fit, parinfo=parinfo, functkw=funckw, autoderivative=1, gtol=1e-10, ftol=1e-5, xtol=1e-10, quiet=quiet)
 
     t2 = time.time()
     print('fit done in: {} s'.format(t2-t1))
@@ -93,11 +91,6 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, slope=0, q
     print('params: {}'.format(model_fit.params))
     print('from model : {}'.format(model.get_parameter(flux_hd)))
 
-    # tools.write_fits(*model_fit.params, sig0, model.vel_map, 'validation/modv', chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof)
-    # tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, 'validation/resv', chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof)
-    # ascii.write(model_fit.params, 'validation/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'd'])
-
-    plt.figure()
-    plt.imshow(vel.data-model.vel_map, cmap='nipy_spectral')
-    plt.colorbar()
-    plt.show()
+    tools.write_fits(*model_fit.params, sig0, model.vel_map, 'validation/modv', chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof)
+    tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, 'validation/resv', chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof)
+    ascii.write(model_fit.params, 'validation/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'd'])

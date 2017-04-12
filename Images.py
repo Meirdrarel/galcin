@@ -1,10 +1,6 @@
-#!/usr/bin/env python
-
 import numpy as np
 from astropy.io import fits
 from scipy.interpolate import interp2d
-import matplotlib.pyplot as plt
-
 
 class Image:
     def __init__(self, filename):
