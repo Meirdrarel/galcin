@@ -4,3 +4,5 @@ Fits_for_Test
 code_source
 validation
 __pycache__
+create_flux_im.py
+create_vel_model.py
