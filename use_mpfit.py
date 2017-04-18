@@ -1,5 +1,6 @@
 import time
 import numpy as np
+from astropy.io import ascii
 
 import tools
 from Model2D import Model2D
@@ -26,7 +27,6 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, slope=0, q
 
     model = Model2D(flux_ld, flux_hd, sig0, slope=slope)
     model.set_parameters(xcen, ycen, pos_angl, incl, syst_vel, vmax, charac_rad, flux_hd)
-    model.velocity_map(psf, flux_ld, flux_hd, model_name)
 
     def func_fit(p, fjac=None, data=None, err=None, vel_model=None, psf=None, flux_ld=None, flux_hd=None):
 
@@ -91,6 +91,6 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, slope=0, q
     print('params: {}'.format(model_fit.params))
     print('from model : {}'.format(model.get_parameter(flux_hd)))
 
-    tools.write_fits(*model_fit.params, sig0, model.vel_map, 'validation/modv', chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof)
-    tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, 'validation/resv', chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof)
-    ascii.write(model_fit.params, 'validation/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'd'])
+    tools.write_fits(*model_fit.params, sig0, model.vel_map, '../validation/modv', chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof)
+    tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, '../validation/resv', chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof)
+    ascii.write(model_fit.params, '../validation/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'd'], overwrite=True)
