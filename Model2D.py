@@ -64,10 +64,7 @@ class Model2D:
         :return ndarray:
         """
 
-        if vel_model:
-            vr = vel_model(self.model_radius, self.model_charac_rad, self.model_vmax)
-        else:
-            vr = vm.exponential_velocity(self.model_radius, self.model_charac_rad, self.model_vmax)
+        vr = vel_model(self.model_radius, self.model_charac_rad, self.model_vmax)
 
         # Calculation of the velocity field
         v = vr * math.sin(math.radians(self.model_incl)) * self.model_theta + self.model_syst_vel

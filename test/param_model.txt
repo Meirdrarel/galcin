@@ -1,0 +1,2 @@
+    gal     x    y    pa     i   vs    vm    d    sig    psfx    psfz    smooth
+   test    30   30     0    45    0   100    5     20       4       0         2 

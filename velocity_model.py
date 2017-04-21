@@ -46,3 +46,4 @@ def arctan_velocity(r, rt, vmax):
     """
 
     return 2*vmax/np.pi*np.arctan(2*r/rt)
+
