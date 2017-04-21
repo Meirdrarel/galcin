@@ -47,9 +47,10 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, slope
         model.set_parameters(cube[0], cube[1], cube[2]-180, cube[3], cube[4], cube[5], cube[6], flux_hd)
         model.velocity_map(psf, flux_ld, flux_hd, vel_model)
         step1 = (vel.data[flux_ld.mask] - model.vel_map[flux_ld.mask])**2/(2*errvel.data[flux_ld.mask]**2)
-        log = np.log(np.sqrt(2*np.pi)*errvel.data[flux_ld.mask])
+        # log = np.log(np.sqrt(2*np.pi)*errvel.data[flux_ld.mask])
 
-        return np.mean(step1*log)
+        # return np.mean(step1*log)
+        return np.sum(step1)
 
     params = ['xcen', 'ycen', 'pa', 'incl', 'vs', 'vm', 'rd']
     n_params = len(params)
