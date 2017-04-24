@@ -79,18 +79,21 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, slope=0, q
     print('\nstart fit with mpfit')
     t1 = time.time()
 
-    model_fit = mpfit.mpfit(func_fit, parinfo=parinfo, functkw=funckw, autoderivative=1, gtol=1e-10, ftol=1e-5, xtol=1e-10, quiet=quiet)
+    model_fit = mpfit.mpfit(func_fit, parinfo=parinfo, functkw=funckw, autoderivative=1, gtol=1e-10, ftol=1e-10, xtol=1e-10, quiet=quiet)
 
     t2 = time.time()
-    print('fit done in: {} s'.format(t2-t1))
+    print('fit done in: {:6.2f} s'.format(t2-t1))
 
     print('fit status:', model_fit.status)
     print('Chi2R: {} DOF: {}'.format(model_fit.fnorm/model_fit.dof, model_fit.dof,))
 
-    print('\nx    y    pa    incl    vs    vm    d')
-    print('params: {}'.format(model_fit.params))
-    print('from model : {}'.format(model.get_parameter(flux_hd)))
+    print('{0:^{width}}{1:^{width}}{2:^{width}}{3:^{width}}{4:^{width}}'
+          '{5:^{width}}{6:^{width}}'.format('xcen', 'ycen', 'pa', 'incl', 'vs', 'vm', 'rd', width=12))
+    print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}{4:^{width}.{prec}f}'
+          '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model.get_parameter(flux_hd), width=12, prec=6))
 
-    tools.write_fits(*model_fit.params, sig0, model.vel_map, '../validation/modv', chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof)
-    tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, '../validation/resv', chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof)
-    ascii.write(model_fit.params, '../validation/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'd'], overwrite=True)
+    tools.write_fits(*model_fit.params, sig0, model.vel_map, '../test/1500317/mpfit/modv', chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof,
+                     mask=flux_ld.mask)
+    tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, '../test/1500317/mpfit/resv', chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
+                     mask=flux_ld.mask)
+    ascii.write(model_fit.params, '../test/1500317/mpfit/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'd'], overwrite=True)
