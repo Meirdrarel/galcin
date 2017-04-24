@@ -46,8 +46,8 @@ def rebin_data(data, new_bin):
 
 def write_fits(xcen, ycen, pos_angl, incl, syst_vel, vmax, rd, sig0, data, filename, oversample=1, chi2r=None, dof=None, mask=None):
 
-    if mask:
-        data[mask] = float('nan')
+    if mask is not None:
+        data[np.logical_not(mask)] = float('nan')
 
     hdu = fits.PrimaryHDU(data=data)
     hdu.header.append(('PA', pos_angl, 'position angle in degree'))

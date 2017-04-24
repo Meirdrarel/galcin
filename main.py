@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import argparse
+from mpi4py import MPI
 import numpy as np
 from astropy.io import ascii, fits
 from PSF import PSF
@@ -41,7 +42,7 @@ except FileNotFoundError:
     sys.exit()
 
 if args.psf:
-    img_psf = fits.getdata(args.psf, )
+    img_psf = fits.getdata(args.psf)
 else:
     img_psf = None
 

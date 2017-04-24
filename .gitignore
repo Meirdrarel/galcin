@@ -7,3 +7,14 @@ vel.fits
 modelV_python.fits
 flux.fits
 
+/test/test_IS.points
+/test/test_stats.dat
+/test/test_phys_live.points
+/test/test_post_equal_weights.dat
+/test/test_IS.iterinfo
+/test/test_IS.ptprob
+/test/test_summary.txt
+/test/test_.txt
+/test/test_live.points
+/test/test_resume.dat
+/test/test_ev.dat
