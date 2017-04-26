@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-import sys
 import argparse
-from mpi4py import MPI
+import sys
 import numpy as np
 from astropy.io import ascii, fits
 from PSF import PSF
@@ -9,6 +8,7 @@ from Images import Image, ImageOverSamp
 import velocity_model as vm
 from use_mpfit import use_mpfit
 from use_pymultinest import use_pymultinest
+
 
 parser = argparse.ArgumentParser()
 
@@ -37,8 +37,8 @@ try:
         flux_hd = ImageOverSamp(args.fits_ld, params[7])
     vel = Image(args.fits_vel)
     errvel = Image(args.fits_evel)
-except FileNotFoundError:
-    print("File not found ")
+except FileNotFoundError as e:
+    print("File not found \n'%s'", e)
     sys.exit()
 
 if args.psf:
@@ -53,12 +53,10 @@ model_name = {'exp': vm.exponential_velocity, 'flat': vm.flat_velocity, 'arctan'
 psf = PSF(flux_hd, img_psf, fwhm=np.sqrt(params[9]**2+params[11]**2))
 
 if args.mpfit_multinest is True:
-    use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], slope=args.slope, quiet=args.verbose)
+    use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], 0, slope=args.slope, quiet=args.verbose)
 else:
-
     if args.verbose:
         quiet = 0
     else:
         quiet = 1
-
     use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], slope=args.slope, quiet=quiet)

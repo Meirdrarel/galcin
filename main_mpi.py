@@ -62,7 +62,7 @@ psf = PSF(flux_hd, img_psf, fwhm=np.sqrt(params[9]**2+params[11]**2))
 comm.barrier()
 
 if args.mpfit_multinest is True:
-    use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], slope=args.slope, quiet=args.verbose)
+    use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], slope=args.slope, rank=rank, quiet=args.verbose)
 else:
     if rank == 0:
         if args.verbose:

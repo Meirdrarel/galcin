@@ -82,7 +82,7 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, slope=0, q
     model_fit = mpfit.mpfit(func_fit, parinfo=parinfo, functkw=funckw, autoderivative=1, gtol=1e-10, ftol=1e-10, xtol=1e-10, quiet=quiet)
 
     t2 = time.time()
-    print('fit done in: {:6.2f} s'.format(t2-t1))
+    print('\nfit done in: {:6.2f} s'.format(t2-t1))
 
     print('fit status:', model_fit.status)
     print('Chi2R: {} DOF: {}'.format(model_fit.fnorm/model_fit.dof, model_fit.dof,))
@@ -96,4 +96,7 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, slope=0, q
                      mask=flux_ld.mask)
     tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, '../test/1500317/mpfit/resv', chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
                      mask=flux_ld.mask)
-    ascii.write(model_fit.params, '../test/1500317/mpfit/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'd'], overwrite=True)
+    table = {'x': model_fit.params[0], 'y': model_fit.params[1], 'pa': model_fit.params[2], 'incl': model_fit.params[3], 'vs': model_fit.params[4],
+             'vm': model_fit.params[5], 'rd': model_fit.params[6]}
+    ascii.write(model_fit.params, '../test/1500317/mpfit/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'],
+                formats={'x': '%.6f', 'y': '%.6f', 'pa': '%.6f', 'incl': '%.6f', 'vs': '%.6f', 'vm': '%.6f', 'rd': '%.6f'}, overwrite=True)
