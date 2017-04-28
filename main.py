@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import argparse
-import sys
+import sys, os
 import numpy as np
 from astropy.io import ascii, fits
 from PSF import PSF
@@ -8,11 +8,12 @@ from Images import Image, ImageOverSamp
 import velocity_model as vm
 from use_mpfit import use_mpfit
 from use_pymultinest import use_pymultinest
-
+import tools
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument('model')
+parser.add_argument('path')
 parser.add_argument('input_txt')
 parser.add_argument('fits_ld')
 parser.add_argument('fits_vel')
@@ -26,23 +27,26 @@ group.add_argument('--mpfit', action='store_false', default=False, dest='mpfit_m
 group.add_argument('--multinest', action='store_true', dest='mpfit_multinest')
 args = parser.parse_args()
 
-# ADD NEW MODEL IN THIS DICTIONARY:
+params_file = tools.search_file(args.path, args.input_txt)
+params = ascii.read(params_file)[0]
 
-try:
-    params = ascii.read(args.input_txt)[0]
-    flux_ld = Image(args.fits_ld)
-    if args.fits_hd:
-        flux_hd = Image(args.fits_hd)
-    else:
-        flux_hd = ImageOverSamp(args.fits_ld, params[7])
-    vel = Image(args.fits_vel)
-    errvel = Image(args.fits_evel)
-except FileNotFoundError as e:
-    print("File not found \n'%s'", e)
-    sys.exit()
+flux_ld_file = tools.search_file(args.path, args.fits_ld)
+flux_ld = Image(flux_ld_file)
+if args.fits_hd:
+    flux_hd_file = tools.search_file(args.path, args.fits_hd)
+    flux_hd = Image(flux_hd_file)
+else:
+    flux_hd = ImageOverSamp(flux_ld_file, params[7])
+
+vel_file = tools.search_file(args.path, args.fits_vel)
+vel = Image(vel_file)
+
+evel_file = tools.search_file(args.path, args.fits_evel)
+errvel = Image(evel_file)
 
 if args.psf:
-    img_psf = fits.getdata(args.psf)
+    psf_file = tools.search_file(args.path, args.psf)
+    img_psf = fits.getdata(psf_file)
 else:
     img_psf = None
 
@@ -53,10 +57,10 @@ model_name = {'exp': vm.exponential_velocity, 'flat': vm.flat_velocity, 'arctan'
 psf = PSF(flux_hd, img_psf, fwhm=np.sqrt(params[9]**2+params[11]**2))
 
 if args.mpfit_multinest is True:
-    use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], 0, slope=args.slope, quiet=args.verbose)
+    use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], args.path, rank=0, slope=args.slope, quiet=args.verbose)
 else:
     if args.verbose:
         quiet = 0
     else:
         quiet = 1
-    use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], slope=args.slope, quiet=quiet)
+    use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], args.path, slope=args.slope, quiet=quiet)

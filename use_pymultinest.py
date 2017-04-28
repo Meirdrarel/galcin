@@ -1,15 +1,14 @@
 import numpy as np
 import pymultinest
-import time
-import os
+import time, os
 from Model2D import Model2D
 from PSF import PSF
 import tools
 from astropy.io import ascii
-from mpi4py import MPI
+import matplotlib.pyplot as plt
 
 
-def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, slope=0, rank=0, quiet=False):
+def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path, slope=0, rank=0, quiet=False):
     """
 
     :param PSF psf: 
@@ -29,13 +28,13 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, slope
     model = Model2D(flux_ld, flux_hd, sig0, slope=slope)
 
     def prior(cube, ndim, nparams):
-        cube[0] = cube[0] * 10 + xcen - 5      # prior between xcen - 5 ans xcen + 5
-        cube[1] = cube[1] * 20 + ycen - 10      # prior between ycen - 5 ans ycen + 5
-        cube[2] = cube[2] * 360 - 180           # pos angl between -180 and 180 degree
-        cube[3] = cube[3] * 40 + incl - 20      # incl between incl - 20 and incl  + 20
-        cube[4] = cube[4] * 1000 - 500          # sys vel between -500 and 500km/s
-        cube[5] = cube[5] * 500                 # vmax between 0 and 500km/s
-        cube[6] = cube[6] * 10 + charac_rad - 5 # charac rad between 1 and 15
+        cube[0] = cube[0] * 6 - 3 + xcen         # prior between xcen - 5 ans xcen + 5
+        cube[1] = cube[1] * 6 - 3 + ycen         # prior between ycen - 5 ans ycen + 5
+        cube[2] = cube[2] * 360 - 180            # pos angl between -180 and 180 degree
+        cube[3] = cube[3] * 40 + incl - 20       # incl between incl - 20 and incl  + 20
+        cube[4] = cube[4] * 1000 - 500           # sys vel between -500 and 500km/s
+        cube[5] = cube[5] * 500                  # vmax between 0 and 500km/s
+        cube[6] = cube[6] * 10 + charac_rad - 5  # charac rad between 1 and 15
 
     def loglike(cube, ndim, nparams):
 
@@ -49,14 +48,18 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, slope
     params = ['xcen', 'ycen', 'pa', 'incl', 'vs', 'vm', 'rd']
     n_params = len(params)
 
+    if rank == 0:
+        if os.path.isdir(path+'multinest') is False:
+            os.makedirs(path+'multinest')
+
     t1 = time.time()
-    pymultinest.run(loglike, prior, n_params, outputfiles_basename='../test/1500317/multinest/output_', resume=False, verbose=quiet, max_iter=12000,
-                    n_live_points=0)
+    pymultinest.run(loglike, prior, n_params, outputfiles_basename=path+'/multinest/output_', resume=False, verbose=quiet, max_iter=19000,
+                    n_live_points=1000)
     t2 = time.time()
     if rank == 0:
         print('fit done in: {:6.2f} s'.format(t2-t1))
 
-        output = pymultinest.Analyzer(n_params=n_params, outputfiles_basename='../test/1500317/multinest/output_')
+        output = pymultinest.Analyzer(n_params=n_params, outputfiles_basename=path+'/multinest/output_')
         stats = output.get_mode_stats()
         bestfit = output.get_best_fit()
 
@@ -70,7 +73,27 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, slope
         print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}'
               '{4:^{width}.{prec}f}{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*stats['modes'][0]['sigma'], width=12, prec=6))
 
-        tools.write_fits(*bestfit['parameters'], sig0, model.vel_map, '../test/1500317/multinest/modv', mask=flux_ld.mask)
-        tools.write_fits(*bestfit['parameters'], sig0, vel.data-model.vel_map, '../test/1500317/multinest/resv', mask=flux_ld.mask)
-        ascii.write(np.array(bestfit['parameters']), '../test/1500317/multinest/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'],
+        tools.write_fits(*bestfit['parameters'], sig0, model.vel_map, path+'/multinest/modv', mask=flux_ld.mask)
+        tools.write_fits(*bestfit['parameters'], sig0, vel.data-model.vel_map, path+'/multinest/resv', mask=flux_ld.mask)
+        ascii.write(np.array([bestfit['parameters'], stats['modes'][0]['sigma']]), path+'/multinest/params_fit.txt',
+                    names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'],
                     formats={'x': '%.6f', 'y': '%.6f', 'pa': '%.6f', 'incl': '%.6f', 'vs': '%.6f', 'vm': '%.6f', 'rd': '%.6f'}, overwrite=True)
+
+        parameters = ['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd']
+        p = pymultinest.PlotMarginalModes(output)
+        plt.figure(figsize=(5 * n_params, 5 * n_params))
+        # plt.subplots_adjust(wspace=0, hspace=0)
+        for i in range(n_params):
+            plt.subplot(n_params, n_params, n_params * i + i + 1)
+            p.plot_marginal(i, with_ellipses=True, with_points=False, grid_points=50)
+            plt.ylabel("Probability")
+            plt.xlabel(parameters[i])
+
+            for j in range(i):
+                plt.subplot(n_params, n_params, n_params * j + i + 1)
+                # plt.subplots_adjust(left=0, bottom=0, right=0, top=0, wspace=0, hspace=0)
+                p.plot_conditional(i, j, with_ellipses=False, with_points=True, grid_points=30)
+                plt.xlabel(parameters[i])
+                plt.ylabel(parameters[j])
+
+        plt.savefig(path + '/multinest/proba.pdf')

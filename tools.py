@@ -1,6 +1,8 @@
 import math
 import numpy as np
 from astropy.io import fits
+import os
+import sys
 
 
 def sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=(240, 240)):
@@ -64,3 +66,13 @@ def write_fits(xcen, ycen, pos_angl, incl, syst_vel, vmax, rd, sig0, data, filen
 
     hdulist = fits.HDUList(hdu)
     hdulist.writeto(filename + '.fits', checksum=True, overwrite=True)
+
+
+def search_file(path, filename):
+    while True:
+        file_list = os.listdir(path)
+        if filename in file_list:
+            return path+filename
+        else:
+            print('File {} not found in directory {}'.format(filename, path))
+            sys.exit()

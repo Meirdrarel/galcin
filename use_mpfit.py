@@ -1,14 +1,14 @@
 import time
 import numpy as np
 from astropy.io import ascii
-
+import os
 import tools
 from Model2D import Model2D
 from PSF import PSF
 import cap_mpfit as mpfit
 
 
-def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, slope=0, quiet=1):
+def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slope=0, quiet=1):
     """
     
     :param PSF psf: 
@@ -92,11 +92,12 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, slope=0, q
     print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}{4:^{width}.{prec}f}'
           '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model.get_parameter(flux_hd), width=12, prec=6))
 
-    tools.write_fits(*model_fit.params, sig0, model.vel_map, '../test/1500317/mpfit/modv', chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof,
+    if os.path.isdir(path+'mpfit') is False:
+        os.makedirs(path+'mpfit')
+
+    tools.write_fits(*model_fit.params, sig0, model.vel_map, path+'/mpfit/modv', chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof,
                      mask=flux_ld.mask)
-    tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, '../test/1500317/mpfit/resv', chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
+    tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, path+'/mpfit/resv', chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
                      mask=flux_ld.mask)
-    table = {'x': model_fit.params[0], 'y': model_fit.params[1], 'pa': model_fit.params[2], 'incl': model_fit.params[3], 'vs': model_fit.params[4],
-             'vm': model_fit.params[5], 'rd': model_fit.params[6]}
-    ascii.write(model_fit.params, '../test/1500317/mpfit/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'],
+    ascii.write(model_fit.params, path+'/mpfit/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'],
                 formats={'x': '%.6f', 'y': '%.6f', 'pa': '%.6f', 'incl': '%.6f', 'vs': '%.6f', 'vm': '%.6f', 'rd': '%.6f'}, overwrite=True)
