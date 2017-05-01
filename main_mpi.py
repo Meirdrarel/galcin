@@ -4,12 +4,12 @@ import argparse
 import sys
 import numpy as np
 from astropy.io import ascii, fits
-from PSF import PSF
-from Images import Image, ImageOverSamp
-import velocity_model as vm
+from Class.PSF import PSF
+from Class.Images import Image, ImageOverSamp
+import Tools.velocity_model as vm
 from use_mpfit import use_mpfit
 from use_pymultinest import use_pymultinest
-import tools
+import Tools.tools as tools
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()

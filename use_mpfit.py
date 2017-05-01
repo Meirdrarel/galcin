@@ -2,10 +2,10 @@ import time
 import numpy as np
 from astropy.io import ascii
 import os
-import tools
-from Model2D import Model2D
-from PSF import PSF
-import cap_mpfit as mpfit
+import Tools.tools as tools
+from Class.Model2D import Model2D
+from Class.PSF import PSF
+import Tools.cap_mpfit as mpfit
 
 
 def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slope=0, quiet=1):

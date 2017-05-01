@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 import argparse
-import sys, os
 import numpy as np
 from astropy.io import ascii, fits
-from PSF import PSF
-from Images import Image, ImageOverSamp
-import velocity_model as vm
+from Class.PSF import PSF
+from Class.Images import Image, ImageOverSamp
+import Tools.velocity_model as vm
+import Tools.tools as tools
 from use_mpfit import use_mpfit
 from use_pymultinest import use_pymultinest
-import tools
 
 parser = argparse.ArgumentParser()
 

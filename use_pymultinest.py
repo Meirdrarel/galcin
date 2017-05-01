@@ -1,9 +1,9 @@
 import numpy as np
 import pymultinest
 import time, os
-from Model2D import Model2D
-from PSF import PSF
-import tools
+from Class.Model2D import Model2D
+from Class.PSF import PSF
+import Tools.tools as tools
 from astropy.io import ascii
 import matplotlib.pyplot as plt
 
@@ -31,10 +31,12 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
         cube[0] = cube[0] * 6 - 3 + xcen         # prior between xcen - 5 ans xcen + 5
         cube[1] = cube[1] * 6 - 3 + ycen         # prior between ycen - 5 ans ycen + 5
         cube[2] = cube[2] * 360 - 180            # pos angl between -180 and 180 degree
-        cube[3] = cube[3] * 40 + incl - 20       # incl between incl - 20 and incl  + 20
+        # cube[3] = cube[3] * 40 + incl - 20       # incl between incl - 20 and incl  + 20
+        cube[3] = cube[3] * 80 + 5
         cube[4] = cube[4] * 1000 - 500           # sys vel between -500 and 500km/s
         cube[5] = cube[5] * 500                  # vmax between 0 and 500km/s
-        cube[6] = cube[6] * 10 + charac_rad - 5  # charac rad between 1 and 15
+        # cube[6] = cube[6] * 10 + charac_rad - 5  # charac rad between 1 and 15
+        cube[6] = cube[6] * 14 + 1
 
     def loglike(cube, ndim, nparams):
 
