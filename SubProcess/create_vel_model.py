@@ -1,11 +1,11 @@
 #! usr/bin/env python
 import numpy as np
-import tools
+import Tools.tools as tools
 import matplotlib.pyplot as plt
-import velocity_model as vm
-from Model2D import Model2D
-from PSF import PSF
-from Images import ImageOverSamp, Image
+import Tools.velocity_model as vm
+from Class.Model2D import Model2D
+from Class.PSF import PSF
+from Class.Images import ImageOverSamp, Image
 
 
 def create_vel_model(pos_angl, incl, xcen, ycen, vmax, syst_vel, sig0, charac_rad, fwhm, plot=False):

@@ -12,14 +12,26 @@ class Image:
         :param string type_im: MUSE, HST etc ... 
         """
 
-        self.header = fits.getheader(filename)
-        self.data = np.nan_to_num(fits.getdata(filename))
-        self.high = self.header['NAXIS1']
-        self.length = self.header['NAXIS2']
-        self.size = np.array(np.shape(self.data))
-        self.len = self.length*self.high
-        self.oversample = 1
-        self.mask = self.data != 0
+        if type(filename) is str:
+            self.header = fits.getheader(filename)
+            self.data = np.nan_to_num(fits.getdata(filename))
+            self.high = self.header['NAXIS1']
+            self.length = self.header['NAXIS2']
+            self.size = np.array(np.shape(self.data))
+            self.len = self.length*self.high
+            self.oversample = 1
+            self.mask = self.data != 0
+
+        # Add for create model without images
+        if type(filename) is np.ndarray:
+            self.header = None
+            self.data = filename
+            self.size = np.array(np.shape(self.data))
+            self.high = self.size[0]
+            self.length = self.size[1]
+            self.len = self.length*self.high
+            self.oversample = 1
+            self.mask = self.data != 0
 
 
 class ImageOverSamp(Image):

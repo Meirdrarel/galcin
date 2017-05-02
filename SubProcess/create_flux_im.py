@@ -1,35 +1,11 @@
 #! usr/bin/env python
 import os
 import numpy as np
-import tools
+import Tools.tools as tools
+import Tools.flux_model as fm
 import matplotlib.pyplot as plt
-from PSF import PSF
-from Images import Image
-
-
-def exponential_disk_intensity(xcen, ycen, pos_angl, incl, rd, center_bright, rtrunc, im_size):
-    """
-    
-    :param float xcen: 
-    :param float ycen: 
-    :param float pos_angl: 
-    :param float incl: 
-    :param float rd: 
-    :param float center_bright: 
-    :param float rtrunc: 
-    :param ndarray im_size: 
-    :return: 
-    """
-    r, theta = tools.sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=im_size)
-
-    if rd != 0:
-        flux = center_bright * np.exp(- np.abs(r) / rd)
-    else:
-        flux = center_bright * np.exp(0 * r)
-
-    flux[np.where(r > rtrunc)] = 0.
-
-    return flux
+from Class.PSF import PSF
+from Class.Images import Image
 
 
 def create_map_flux(pos_angl, incl, xcen, ycen, vmax, syst_vel, sig0, rtrunc, charac_rad, fwhm, size, plot=False):
@@ -53,7 +29,7 @@ def create_map_flux(pos_angl, incl, xcen, ycen, vmax, syst_vel, sig0, rtrunc, ch
     im_size = np.array(size)
     center_bright = 1e3
 
-    flux = exponential_disk_intensity(xcen, ycen, pos_angl, incl, charac_rad, center_bright, rtrunc, im_size)
+    flux = fm.exponential_disk_intensity(xcen, ycen, pos_angl, incl, charac_rad, center_bright, rtrunc, im_size)
     tools.write_fits(xcen, ycen, pos_angl, incl, syst_vel, vmax, charac_rad, sig0, flux, '../validation/flux_hdImp', oversample=1, chi2r=None, dof=None,
                      mask=None)
 

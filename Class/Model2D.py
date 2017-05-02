@@ -127,4 +127,3 @@ class Model2D:
         """
         return [self.model_xcen/flux_hd.oversample, self.model_ycen/flux_hd.oversample, self.model_pos_angl, self.model_incl, self.model_syst_vel,
                 self.model_vmax, self.model_charac_rad/flux_hd.oversample]
-
