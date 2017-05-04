@@ -1,50 +1,150 @@
 import numpy as np
-import Tools.tools as tools
-from Class.Model2D import Model2D
-from mpi4py import MPI
-import argparse
-import sys
-from astropy.io import ascii, fits
-from Class.PSF import PSF
-from Class.Images import Image, ImageOverSamp
-import Tools.velocity_model as vm
-from use_mpfit import use_mpfit
-from use_pymultinest import use_pymultinest
 from numpy.fft import fftshift, fft2, ifft2, irfft, rfft
+from astropy.io import ascii, fits
+import Tools.tools as tools
 
 
-class Model3D(Model2D):
-    def __init__(self, flux_ld, flux_hd, sig0, slope=0, lbda=6562.78, dlbda=1, lsize=40):
-        Model2D.__init__(self, flux_ld, flux_hd, sig0, slope=0)
+class Model3D:
+    def __init__(self, xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad, sig0, flux_model, lbda0, dlbda, lrange, pix_size, im_size=(240, 240),
+                 slope=0):
 
-        self.cube = None
-        self.lbd0 = lbda
+        self.light_speed = 299792.458  # km/s
+        self.center_bright = 2000
+
+        self.xcen = xcen
+        self.ycen = ycen
+        self.pos_angl = pos_angl
+        self.incl = incl
+        self.syst_vel = syst_vel
+        self.vmax = max_vel
+        self.charac_rad = charac_rad
+        self.lbda0 = lbda0
+        self.sig0 = (sig0/self.light_speed + 1)
+        self.slope = slope
         self.dlbda = dlbda
-        self.lsize = lsize
 
-    def spectral_convolution(self, cube, kernel, lbda, lrange=16.8, lres=0.15):
+        self.im_size = im_size
+        self.radius, self.theta = tools.sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=im_size)
 
-        #   CREATION OF THE GAUSSIAN FUNCTION
-        # kernelind = np.int(np.ceil(kernel / lres))      # number of spatial sampling elements in kernel
-        # ls = 2 * kernelind  # (2*fwhmind) is considered to avoid the boundary effect after the convolution.
+        self.lsf_size = int(np.ceil(lrange / dlbda))
+        self.pix_size = pix_size
+        self.lrange = lrange
+        self.psf = None
+        self.psf_size = None
+        self.psf_fft2 = None
+        self.lsf = None
+        self.lsf_fft = None
+        self.cube = None
+        self.lbda = None
+        self.lbda_ind = np.arange(-self.lsf_size/2*dlbda, self.lsf_size/2*dlbda, dlbda) + self.lbda0
+        self.flux = None
+        self.flux_model = flux_model
 
-        ideal_size = 2 ** np.ceil(np.log(self.lsize + 2 * ls) / np.log(2))
-        ls = (ideal_size - self.lsize) / 2
+    def disk_velocity(self, vel_model):
+        """
 
-        lindex = (np.arange(self.lsize + 2 * ls) - (self.lsize + 2 * ls) / 2) * lres  # spectral sampling elements
-        #    vind = (lindex / lbda) * cst.c *1e-3              #velocity sampling elements
+        :param vel_model:
+        :return ndarray:
+        """
 
-        sigma = kernel / (2 * np.sqrt(2 * np.log(2)))
-        psfgrism = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-(lindex) ** 2 / (2.0 * sigma ** 2))
-        psfgrism /= psfgrism.sum()  # normalization in order to ensure flux conservation
-        psfgrism_sh = fftshift(psfgrism)
-        #   SPECTRAL CONVOLUTION
-        cube2 = np.zeros((cube.shape[0] + 2 * ls, cube.shape[1], cube.shape[2]))
-        cube2[ls:cube.shape[0] + ls, :, :] = cube
+        vr = vel_model(self.radius, self.charac_rad, self.vmax)
 
-        specconv = irfft(rfft(cube2, axis=0) * rfft(psfgrism_sh.reshape(psfgrism_sh.shape[0], 1, 1), axis=0), axis=0)
+        # Calculation of the velocity field
+        v = vr * np.sin(np.radians(self.incl)) * self.theta + self.syst_vel
+
+        return v
+
+    def create_cube(self, vel_model, add_clump=False, nb_cl=10):
+        self.cube = self.flux_model(self.xcen, self.ycen, self.pos_angl, self.incl, self.charac_rad, self.center_bright, 100, self.im_size)
+        if add_clump is True:
+            self.add_clump(nb_cl)
+        v = self.disk_velocity(vel_model)
+        self.lbda = self.lbda0*(v/self.light_speed + 1)
+        self.cube = self.flux*np.exp(-(self.lbda-self.lbda_ind.reshape(self.lsf_size, 1, 1))**2/2/self.sig0**2)
+
+    # def spectral_psf(self):
+    #
+    #     self.spec_psf = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-(lindex) ** 2 / (2.0 * sigma ** 2))
+
+    def add_clump(self, nb_cl):
+
+        clump = np.ones((2, 2)) * self.center_bright / 10
+        # print(self.cube.shape, clump.shape)
+        for i in range(nb_cl):
+            x, y = np.random.randint(-int(1.5 * self.charac_rad), int(1.5 * self.charac_rad), size=2) + [self.xcen, self.ycen]
+            # print([y, y+2, x, x+2], '\t', np.shape(self.cube[:, y:y + 2, x:x + 2]), '\t', [x, y])
+            self.cube[:, y:y + 2, x:x + 2] += clump
+
+    def conv_psf(self, data, fwhm):
+
+        # (2*fwhm) is considered to avoid the boundary effect after the convolution
+        self.psf_size = np.array([2 * fwhm, 2 * fwhm])
+        ideal_size = 2 ** np.ceil(np.log(self.im_size + 2 * self.psf_size) / np.log(2))
+        # to prevent any problems in the future, self.psf_size has been forced to be an array of int
+        self.psf_size = np.array((ideal_size - self.im_size) / 2, dtype=int)
+
+        y, x = np.indices((self.im_size[0] + 2 * self.psf_size[0], self.im_size[1] + 2 * self.psf_size[1]))
+        sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
+        self.psf = (1. / (2 * np.pi * sigma ** 2)) * np.exp(-((x - self.im_size[1] / 2 - self.psf_size[1]) ** 2 + (y - self.im_size[0] / 2 - self.psf_size[
+            0]) ** 2) / (2.0 * sigma ** 2))
+
+        # normalization in order to ensure flux conservation
+        self.psf /= self.psf.sum()
+
+        self.psf_fft2 = fft2(fftshift(self.psf).reshape(1, self.psf.shape[0], self.psf.shape[1]))
+
+        data2 = np.zeros((data.shape[0], data.shape[1] + 2 * self.psf_size[0], data.shape[2] + 2 * self.psf_size[1]))
+
+        data2[:, self.psf_size[0]:data.shape[1] + self.psf_size[0], self.psf_size[1]:data.shape[2] + self.psf_size[1]] = data
+        data_conv = ifft2(fft2(data2) * self.psf_fft2)
+
+        return data_conv[:, self.psf_size[0]:data.shape[1] + self.psf_size[0], self.psf_size[1]:data.shape[2] + self.psf_size[1]].real
+
+    def conv_lsf(self, data, fwhm):
+
+        ls = int(np.ceil(2 * fwhm))
+        ideal_size = 2 ** np.ceil(np.log(self.lsf_size + 2 * ls) / np.log(2))
+        ls = int(np.ceil((ideal_size - self.lsf_size) / 2))
+
+        sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
+        lindex = (np.arange(self.lsf_size + 2 * ls) - (self.lsf_size + 2 * ls) / 2)
+
+        self.lsf = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-lindex ** 2 / (2.0 * sigma ** 2))
+        self.lsf /= self.lsf.sum()  # normalization in order to ensure flux conservation
+        self.lsf_fft = fftshift(self.lsf)
+
+        data2 = np.zeros((data.shape[0] + 2 * ls, data.shape[1], data.shape[2]))
+        data2[ls:data.shape[0] + ls, :, :] = data
+
+        specconv = irfft(rfft(data2, axis=0) * rfft(self.lsf_fft.reshape(self.lsf_fft.shape[0], 1, 1), axis=0), axis=0)
 
         specconv = specconv.real
-        specconv = specconv[ls:cube.shape[0] + ls, :, :]
+        specconv = specconv[ls:data.shape[0] + ls, :, :]
 
         return specconv
+
+    def write_fits(self, data, name, oversample=1):
+        if oversample != 1:
+            self.pix_size *= oversample
+            self.xcen /= oversample
+            self.ycen /= oversample
+        print('\npixel size: {}\nxcen: {} \tycen: {}'.format(self.pix_size, self.xcen, self.ycen))
+        hdu = fits.PrimaryHDU(data=data)
+        hdu.header.append(('CTYPE1', 'RA--TAN', 'pixel coordinate system'))
+        hdu.header.append(('CUNIT1', 'ARCSEC', 'pixel coordinate unit'))
+        hdu.header.append(('CRPIX1', self.xcen, 'Reference pixel in X'))
+        hdu.header.append(('CRVAL1', 0., 'Wavelength of reference pixel'))
+        hdu.header.append(('CDELT1', self.pix_size, 'Pixel size in degree'))
+        hdu.header.append(('CTYPE2', 'DEC--TAN', 'pixel coordinate system'))
+        hdu.header.append(('CUNIT2', 'ARCSEC', 'pixel coordinate unit'))
+        hdu.header.append(('CRPIX2', self.ycen, 'Reference pixel in Y'))
+        hdu.header.append(('CRVAL2', 0., 'Reference pixel'))
+        hdu.header.append(('CDELT2', self.pix_size, 'Pixel size in degree'))
+        hdu.header.append(('CTYPE3', 'WAVELENGTH', 'pixel coordinate system'))
+        hdu.header.append(('CUNIT3', 'Angstrom', 'pixel coordinate unit'))
+        hdu.header.append(('CRPIX3', 1, 'Reference pixel in Y'))
+        hdu.header.append(('CRVAL3', self.lbda0 - self.lrange * self.dlbda / 2, 'Reference pixel'))
+        hdu.header.append(('CDELT3', self.dlbda, 'Pixel size in angstrom'))
+        hdulist = fits.HDUList(hdu)
+        hdulist.writeto(name + '.fits', checksum=True, overwrite=True)
+        print('fits " {} "  has been written'.format(name))

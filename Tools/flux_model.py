@@ -2,6 +2,20 @@ import numpy as np
 import Tools.tools as tools
 
 
+def flat_disk_intensity(xcen, ycen, pos_angl, incl, rd, center_bright, rtrunc, im_size):
+
+    r, theta = tools.sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=im_size)
+
+    flux = np.zeros(np.shape(r))
+
+    flux[np.where(r > rd)] = center_bright*rd/r[np.where(r > rd)]
+    flux[np.where(r <= rd)] = center_bright
+
+    flux[np.where(r > rtrunc)] = 0.
+
+    return flux
+
+
 def exponential_disk_intensity(xcen, ycen, pos_angl, incl, rd, center_bright, rtrunc, im_size):
     """
 
