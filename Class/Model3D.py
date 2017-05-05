@@ -55,10 +55,14 @@ class Model3D:
         return v
 
     def create_cube(self, vel_model, add_clump=False, nb_cl=10):
-        self.cube = self.flux_model(self.xcen, self.ycen, self.pos_angl, self.incl, self.charac_rad, self.center_bright, 100, self.im_size)
+
+        self.flux = self.flux_model(self.xcen, self.ycen, self.pos_angl, self.incl, self.charac_rad, self.center_bright, 100, self.im_size)
+
         if add_clump is True:
             self.add_clump(nb_cl)
+
         v = self.disk_velocity(vel_model)
+
         self.lbda = self.lbda0*(v/self.light_speed + 1)
         self.cube = self.flux*np.exp(-(self.lbda-self.lbda_ind.reshape(self.lsf_size, 1, 1))**2/2/self.sig0**2)
 
@@ -68,12 +72,12 @@ class Model3D:
 
     def add_clump(self, nb_cl):
 
-        clump = np.ones((2, 2)) * self.center_bright / 10
-        # print(self.cube.shape, clump.shape)
         for i in range(nb_cl):
-            x, y = np.random.randint(-int(1.5 * self.charac_rad), int(1.5 * self.charac_rad), size=2) + [self.xcen, self.ycen]
-            # print([y, y+2, x, x+2], '\t', np.shape(self.cube[:, y:y + 2, x:x + 2]), '\t', [x, y])
-            self.cube[:, y:y + 2, x:x + 2] += clump
+            x = np.random.randint(-int(1.5 * self.charac_rad), int(1.5 * self.charac_rad)) + self.xcen
+            y = int(np.random.randint(-int(self.charac_rad), int(self.charac_rad)) * np.cos(np.radians(self.incl))) + self.ycen
+            clump = np.random.rand(1) * 4 + 1
+            print("Add clump in {}:{} with factor {:6f} pixel's value".format(x, y, float(clump)))
+            self.flux[y, x] *= clump
 
     def conv_psf(self, data, fwhm):
 
