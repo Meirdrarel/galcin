@@ -1,6 +1,7 @@
 import numpy as np
 import pymultinest
-import time, os
+import time
+import os
 from Class.Model2D import Model2D
 from Class.PSF import PSF
 import Tools.tools as tools
@@ -8,7 +9,7 @@ from astropy.io import ascii
 import matplotlib.pyplot as plt
 
 
-def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path, slope=0, rank=0, quiet=False):
+def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path, rank=0, slope=0, quiet=False, whd=''):
     """
 
     :param PSF psf: 
@@ -50,34 +51,40 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
     params = ['xcen', 'ycen', 'pa', 'incl', 'vs', 'vm', 'rd']
     n_params = len(params)
 
-    if rank == 0:
-        if os.path.isdir(path+'multinest') is False:
-            os.makedirs(path+'multinest')
+    if os.path.isdir(path+'multinest') is False:
+        os.makedirs(path+'multinest')
 
-    t1 = time.time()
-    pymultinest.run(loglike, prior, n_params, outputfiles_basename=path+'/multinest/output_', resume=False, verbose=quiet, max_iter=19000,
-                    n_live_points=1000)
-    t2 = time.time()
     if rank == 0:
+        t1 = time.time()
+    pymultinest.run(loglike, prior, n_params, outputfiles_basename=path+'/multinest/output_'+whd, resume=False, verbose=quiet, max_iter=39000,
+                    n_live_points=1000)
+    if rank == 0:
+
+        t2 = time.time()
+
         print('fit done in: {:6.2f} s'.format(t2-t1))
 
-        output = pymultinest.Analyzer(n_params=n_params, outputfiles_basename=path+'/multinest/output_')
+        output = pymultinest.Analyzer(n_params=n_params, outputfiles_basename=path+'/multinest/output_'+whd)
         stats = output.get_mode_stats()
-        bestfit = output.get_best_fit()
+        try:
+            bestfit = output.get_best_fit()['parameters']
+        except IndexError:
+            bestfit = output.get_equal_weighted_posterior()[0, 0:7]
+            model.set_parameters(*bestfit, flux_hd)
 
-        model.set_parameters(*bestfit['parameters'], flux_hd)
+        model.set_parameters(*bestfit, flux_hd)
         model.velocity_map(psf, flux_ld, flux_hd, vel_model)
 
         print('{0:^{width}}{1:^{width}}{2:^{width}}{3:^{width}}{4:^{width}}{5:^{width}}'
               '{6:^{width}}'.format('xcen', 'ycen', 'pa', 'incl', 'vs', 'vm', 'rd', width=12))
         print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}'
-              '{4:^{width}.{prec}f}{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*bestfit['parameters'], width=12, prec=6))
+              '{4:^{width}.{prec}f}{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*bestfit, width=12, prec=6))
         print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}'
               '{4:^{width}.{prec}f}{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*stats['modes'][0]['sigma'], width=12, prec=6))
 
-        tools.write_fits(*bestfit['parameters'], sig0, model.vel_map, path+'/multinest/modv', mask=flux_ld.mask)
-        tools.write_fits(*bestfit['parameters'], sig0, vel.data-model.vel_map, path+'/multinest/resv', mask=flux_ld.mask)
-        ascii.write(np.array([bestfit['parameters'], stats['modes'][0]['sigma']]), path+'/multinest/params_fit.txt',
+        tools.write_fits(*bestfit, sig0, model.vel_map, path+'/multinest/modv'+whd, mask=flux_ld.mask)
+        tools.write_fits(*bestfit, sig0, vel.data-model.vel_map, path+'/multinest/resv'+whd, mask=flux_ld.mask)
+        ascii.write(np.array([bestfit, stats['modes'][0]['sigma']]), path+'/multinest/params_fit'+whd+'.fits',
                     names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'],
                     formats={'x': '%.6f', 'y': '%.6f', 'pa': '%.6f', 'incl': '%.6f', 'vs': '%.6f', 'vm': '%.6f', 'rd': '%.6f'}, overwrite=True)
 
@@ -98,4 +105,4 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
                 plt.xlabel(parameters[i])
                 plt.ylabel(parameters[j])
 
-        plt.savefig(path + '/multinest/proba.pdf')
+        plt.savefig(path + '/multinest/proba'+whd+'.pdf')

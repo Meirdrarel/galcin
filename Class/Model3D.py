@@ -5,7 +5,7 @@ import Tools.tools as tools
 
 
 class Model3D:
-    def __init__(self, xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad, sig0, flux_model, lbda0, dlbda, lrange, pix_size, im_size=(240, 240),
+    def __init__(self, xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad, rtrunc, sig0, flux_model, lbda0, dlbda, lrange, pix_size, im_size=(240, 240),
                  slope=0):
 
         self.light_speed = 299792.458  # km/s
@@ -39,6 +39,7 @@ class Model3D:
         self.lbda_ind = np.arange(-self.lsf_size/2*dlbda, self.lsf_size/2*dlbda, dlbda) + self.lbda0
         self.flux = None
         self.flux_model = flux_model
+        self.rtrunc = rtrunc
 
     def disk_velocity(self, vel_model):
         """
@@ -56,7 +57,7 @@ class Model3D:
 
     def create_cube(self, vel_model, add_clump=False, nb_cl=10):
 
-        self.flux = self.flux_model(self.xcen, self.ycen, self.pos_angl, self.incl, self.charac_rad, self.center_bright, 100, self.im_size)
+        self.flux = self.flux_model(self.xcen, self.ycen, self.pos_angl, self.incl, self.charac_rad, self.center_bright, self.rtrunc, self.im_size)
 
         if add_clump is True:
             self.add_clump(nb_cl)
@@ -73,9 +74,9 @@ class Model3D:
     def add_clump(self, nb_cl):
 
         for i in range(nb_cl):
-            x = np.random.randint(-int(1.5 * self.charac_rad), int(1.5 * self.charac_rad)) + self.xcen
-            y = int(np.random.randint(-int(self.charac_rad), int(self.charac_rad)) * np.cos(np.radians(self.incl))) + self.ycen
-            clump = np.random.rand(1) * 4 + 1
+            y = np.random.randint(-int(self.rtrunc), int(self.rtrunc)) + self.xcen
+            x = int(np.random.randint(-int(self.rtrunc), int(self.rtrunc)) * np.cos(np.radians(self.incl))) + self.ycen
+            clump = np.random.rand(1) * 10 + 10
             print("Add clump in {}:{} with factor {:6f} pixel's value".format(x, y, float(clump)))
             self.flux[y, x] *= clump
 
@@ -138,17 +139,27 @@ class Model3D:
         hdu.header.append(('CUNIT1', 'ARCSEC', 'pixel coordinate unit'))
         hdu.header.append(('CRPIX1', self.xcen, 'Reference pixel in X'))
         hdu.header.append(('CRVAL1', 0., 'Wavelength of reference pixel'))
-        hdu.header.append(('CDELT1', self.pix_size, 'Pixel size in degree'))
+        hdu.header.append(('CDELT1', self.pix_size, 'Pixel size in arcsec'))
         hdu.header.append(('CTYPE2', 'DEC--TAN', 'pixel coordinate system'))
         hdu.header.append(('CUNIT2', 'ARCSEC', 'pixel coordinate unit'))
         hdu.header.append(('CRPIX2', self.ycen, 'Reference pixel in Y'))
         hdu.header.append(('CRVAL2', 0., 'Reference pixel'))
-        hdu.header.append(('CDELT2', self.pix_size, 'Pixel size in degree'))
+        hdu.header.append(('CDELT2', self.pix_size, 'Pixel size in arcsec'))
         hdu.header.append(('CTYPE3', 'WAVELENGTH', 'pixel coordinate system'))
         hdu.header.append(('CUNIT3', 'Angstrom', 'pixel coordinate unit'))
         hdu.header.append(('CRPIX3', 1, 'Reference pixel in Y'))
         hdu.header.append(('CRVAL3', self.lbda0 - self.lrange * self.dlbda / 2, 'Reference pixel'))
         hdu.header.append(('CDELT3', self.dlbda, 'Pixel size in angstrom'))
+        hdu.header.add_comment('Model Parameters')
+        hdu.header.append(('XCEN', self.xcen, 'center abscissa in pixel'), end=True)
+        hdu.header.append(('YCEN', self.ycen, 'center ordinate in pixel'), end=True)
+        hdu.header.append(('PA', self.pos_angl, 'position angle in degree'), end=True)
+        hdu.header.append(('INCL', self.incl, 'inclination in degree'), end=True)
+        hdu.header.append(('RD', self.charac_rad, 'characteristic radius in pixel'), end=True)
+        hdu.header.append(('RTRUNC', self.rtrunc, 'truncated radius in pixel > flux is null'), end=True)
+        hdu.header.append(('MAX_VEL', self.vmax, 'maximum velocity in km/s'), end=True)
+        hdu.header.append(('SYST_VEL', self.syst_vel, 'systemic velocity in km/s'), end=True)
+        hdu.header.append(('SIG0', int((self.sig0-1)*self.light_speed), 'dispersion velocity in km/s'), end=True)
         hdulist = fits.HDUList(hdu)
         hdulist.writeto(name + '.fits', checksum=True, overwrite=True)
         print('fits " {} "  has been written'.format(name))

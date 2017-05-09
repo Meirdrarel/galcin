@@ -34,8 +34,11 @@ flux_ld = Image(flux_ld_file)
 if args.fits_hd:
     flux_hd_file = tools.search_file(args.path, args.fits_hd)
     flux_hd = Image(flux_hd_file)
+    whd = '_whd'
+    flux_hd.oversample = int(flux_hd.length / flux_ld.length)
 else:
     flux_hd = ImageOverSamp(flux_ld_file, params[7])
+    whd = ''
 
 vel_file = tools.search_file(args.path, args.fits_vel)
 vel = Image(vel_file)
@@ -49,17 +52,25 @@ if args.psf:
 else:
     img_psf = None
 
+# import matplotlib.pyplot as plt
+# plt.figure(1)
+# plt.imshow(flux_ld.data)
+# plt.figure(2)
+# plt.imshow(flux_hd.data)
+# plt.show()
+
 print(' all images found \n import the chosen module \n using {}x{} images'.format(vel.size[0], vel.size[1]))
+print('HD image have {} times pixels than SD image'.format(flux_hd.oversample))
 
 model_name = {'exp': vm.exponential_velocity, 'flat': vm.flat_velocity, 'arctan': vm.arctan_velocity}
 
 psf = PSF(flux_hd, img_psf, fwhm=np.sqrt(params[9]**2+params[11]**2))
 
 if args.mpfit_multinest is True:
-    use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], args.path, rank=0, slope=args.slope, quiet=args.verbose)
+    use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], args.path, slope=args.slope, quiet=args.verbose)
 else:
     if args.verbose:
         quiet = 0
     else:
         quiet = 1
-    use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], args.path, slope=args.slope, quiet=quiet)
+    use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], args.path, slope=args.slope, quiet=quiet, whd=whd)

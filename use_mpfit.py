@@ -8,7 +8,7 @@ from Class.PSF import PSF
 import Tools.cap_mpfit as mpfit
 
 
-def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slope=0, quiet=1):
+def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slope=0, quiet=1, whd=''):
     """
     
     :param PSF psf: 
@@ -61,7 +61,7 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
     parinfo[3]['limits'] = [5, 85]
     # syst vel
     parinfo[4]['limited'] = [1, 1]
-    parinfo[4]['limits'] = [0, 1000]
+    parinfo[4]['limits'] = [-500, 500]
     # vm
     parinfo[5]['limited'] = [1, 1]
     parinfo[5]['limits'] = [0, 1000]
@@ -95,9 +95,9 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
     if os.path.isdir(path+'mpfit') is False:
         os.makedirs(path+'mpfit')
 
-    tools.write_fits(*model_fit.params, sig0, model.vel_map, path+'/mpfit/modv', chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof,
+    tools.write_fits(*model_fit.params, sig0, model.vel_map, path+'/mpfit/modv'+whd, chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof,
                      mask=flux_ld.mask)
-    tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, path+'/mpfit/resv', chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
+    tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, path+'/mpfit/resv'+whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
                      mask=flux_ld.mask)
-    ascii.write(model_fit.params, path+'/mpfit/fit_python.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'],
+    ascii.write(model_fit.params, path+'/mpfit/fit_python'+whd+'.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'],
                 formats={'x': '%.6f', 'y': '%.6f', 'pa': '%.6f', 'incl': '%.6f', 'vs': '%.6f', 'vm': '%.6f', 'rd': '%.6f'}, overwrite=True)

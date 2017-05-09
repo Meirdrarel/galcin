@@ -1,9 +1,14 @@
 #!usr/bin/env python
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname('../Class/'), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname('../Tools/'), '..')))
 import Tools.flux_model as fm
 import Tools.velocity_model as vm
 import Tools.tools as tools
 from Class.Model3D import Model3D
 import argparse
+import numpy as np
 
 parser = argparse.ArgumentParser()
 
@@ -38,23 +43,25 @@ xcen = 50    # pixels
 ycen = 50    # pixels
 sig0 = 20    # km/s
 lrange = 50  # angstrom
+rtrunc = 25
 
 fm_list = {'exp': fm.exponential_disk_intensity, 'flat': fm.flat_disk_intensity}
 vm_list = {'exp': vm.exponential_velocity, 'flat': vm.flat_velocity, 'arctan': vm.arctan_velocity}
 
 # for a field of 4"x4" => 20x20 pixels in muse and 100x100 pixels with hst
 
-model = Model3D(xcen, ycen, pa, incl, vs, vmax, rd, sig0, fm_list[args.fm], lbda0, deltal_ld, lrange, pix_size_hd, im_size=(100, 100), slope=0)
+model = Model3D(xcen, ycen, pa, incl, vs, vmax, rd, rtrunc, sig0, fm_list[args.fm], lbda0, deltal_ld, lrange, pix_size_hd, im_size=(100, 100), slope=0)
 if args.nb_cl:
     model.create_cube(vm_list[args.vm], add_clump=True, nb_cl=args.nb_cl)
     ifclump = '_wc'
 else:
     model.create_cube(vm_list[args.vm])
     ifclump = ''
-cube_conv_smooth = model.conv_psf(model.cube, fwhm_psf_hd/pix_size_hd)
+cube_conv_smooth = model.conv_psf(model.cube, fwhm_psf_hd/pix_size_hd)   # 2 pixels
 cube_conv_SP = model.conv_lsf(cube_conv_smooth, fwhm_lsf_ld/deltal_ld)
-model.write_fits(cube_conv_SP, '../test/'+args.filename+ifclump)
+tools.write_fits(xcen, ycen, pa, incl, vs, vmax, rd, sig0, np.mean(cube_conv_SP, axis=0), '../../test/'+args.filename+'_flux_hd'+ifclump, oversample=5)
+model.write_fits(cube_conv_SP, '../../test/'+args.filename+ifclump)
 
-cube_conv = model.conv_psf(cube_conv_SP, fwhm_psf_ld/pix_size_ld)
+cube_conv = model.conv_psf(cube_conv_SP, fwhm_psf_ld/pix_size_ld*5)   # 3.5*5 = 17.5 HST's pixels
 cube_rebin = tools.rebin_data(cube_conv, 5)
-model.write_fits(cube_rebin, '../test/'+args.filename+ifclump+'_rebin', oversample=5)
+model.write_fits(cube_rebin, '../../test/'+args.filename+ifclump+'_rebin', oversample=5)

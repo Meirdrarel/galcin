@@ -12,7 +12,7 @@ class PSF:
 
         :param Image flux_hd:
         :param ndarray img_psf: image of the psf
-        :param float fwhm: fwhm of a gaussian, default is 2.5 pixel
+        :param float fwhm: fwhm of a gaussian, default is 3 pixels
         """
 
         self.psf = img_psf
