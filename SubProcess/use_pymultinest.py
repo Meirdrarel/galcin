@@ -1,7 +1,10 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname('../Class/'), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname('../Tools/'), '..')))
 import numpy as np
 import pymultinest
 import time
-import os
 from Class.Model2D import Model2D
 from Class.PSF import PSF
 import Tools.tools as tools
