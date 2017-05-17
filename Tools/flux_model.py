@@ -8,7 +8,6 @@ def flat_disk_intensity(xcen, ycen, pos_angl, incl, rd, center_bright, rtrunc, i
 
     flux = np.zeros(np.shape(r))
 
-    # flux[np.where(r > rd)] = center_bright*rd/r[np.where(r > rd)]
     flux[np.where(r <= rtrunc)] = center_bright
 
     flux[np.where(r > rtrunc)] = 0.

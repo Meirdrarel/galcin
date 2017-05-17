@@ -3,3 +3,13 @@ __pycache__
 
 /PlotProba.py
 /cube.sh
+/auto_camel.sh
+/SubProcess/cube.sh
+/Class/Debbuger.py
+/log_debbug_mpfit.log
+/log_debbug_main.log
+/log_debbug_model2D.log
+/log_debbug_psf.log
+/log.log
+/SubProcess/create_vel_model.py
+/SubProcess/create_flux_im.py

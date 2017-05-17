@@ -1,14 +1,16 @@
 import numpy as np
 from numpy.fft import fftshift, fft2, ifft2, irfft, rfft
 from astropy.io import ascii, fits
+import astropy.constants as ct
 import Tools.tools as tools
+import matplotlib.pyplot as plt
 
 
 class Model3D:
     def __init__(self, xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad, rtrunc, sig0, flux_model, lbda0, dlbda, lrange, pix_size, im_size=(240, 240),
                  slope=0):
 
-        self.light_speed = 299792.458  # km/s
+        # self.light_speed = 299792.458  # km/s
         self.center_bright = 2000
 
         self.xcen = xcen
@@ -19,7 +21,8 @@ class Model3D:
         self.vmax = max_vel
         self.charac_rad = charac_rad
         self.lbda0 = lbda0
-        self.sig0 = (sig0/self.light_speed + 1)
+        self.sig0 = sig0/ct.c.value*1e3*self.lbda0
+        # self.sig0 = sig0/self.light_speed + 1
         self.slope = slope
         self.dlbda = dlbda
 
@@ -40,6 +43,7 @@ class Model3D:
         self.flux = None
         self.flux_model = flux_model
         self.rtrunc = rtrunc
+        self.v = None
 
     def disk_velocity(self, vel_model):
         """
@@ -53,32 +57,24 @@ class Model3D:
         # Calculation of the velocity field
         v = vr * np.sin(np.radians(self.incl)) * self.theta + self.syst_vel
 
+        print('\nafter projection, min vel : {:3.3f} and max vel : {:3.3f} with vs : {:3.1f}'.format(np.min(v), np.max(v), self.syst_vel))
+
         return v
 
-    def create_cube(self, vel_model, add_clump=False, nb_cl=10):
+    def create_cube(self, vel_model):
 
         self.flux = self.flux_model(self.xcen, self.ycen, self.pos_angl, self.incl, self.charac_rad, self.center_bright, self.rtrunc, self.im_size)
 
-        if add_clump is True:
-            self.add_clump(nb_cl)
-
         v = self.disk_velocity(vel_model)
+        v[np.where(self.radius > self.rtrunc)] = 0
+        self.v = v
 
-        self.lbda = self.lbda0*(v/self.light_speed + 1)
+        # plt.figure()
+        # plt.imshow(v, origin='lower')
+        # plt.show()
+
+        self.lbda = self.lbda0*(v/ct.c.value*1e3 + 1)
         self.cube = self.flux*np.exp(-(self.lbda-self.lbda_ind.reshape(self.lsf_size, 1, 1))**2/2/self.sig0**2)
-
-    # def spectral_psf(self):
-    #
-    #     self.spec_psf = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-(lindex) ** 2 / (2.0 * sigma ** 2))
-
-    def add_clump(self, nb_cl):
-
-        for i in range(nb_cl):
-            y = np.random.randint(-int(self.rtrunc), int(self.rtrunc)) + self.xcen
-            x = int(np.random.randint(-int(self.rtrunc), int(self.rtrunc)) * np.cos(np.radians(self.incl))) + self.ycen
-            clump = np.random.rand(1) * 10 + 10
-            print("Add clump in {}:{} with factor {:6f} pixel's value".format(x, y, float(clump)))
-            self.flux[y, x] *= clump
 
     def conv_psf(self, data, fwhm):
 
@@ -128,17 +124,25 @@ class Model3D:
 
         return specconv
 
-    def write_fits(self, data, name, oversample=1):
+    def write_fits(self, data, name, oversample=1, verbose=True):
         if oversample != 1:
             self.pix_size *= oversample
             self.xcen /= oversample
             self.ycen /= oversample
-        print('\npixel size: {}\nxcen: {} \tycen: {}'.format(self.pix_size, self.xcen, self.ycen))
+            self.charac_rad /= oversample
+            self.rtrunc /= oversample
+            if verbose:
+                print('----------------------------------------\nfor low resolution :')
+        else:
+            if verbose:
+                print('----------------------------------------\nfor high resolution :')
+        if verbose:
+            print('pixel size: {}\nxcen: {} \tycen: {}'.format(self.pix_size, self.xcen, self.ycen))
         hdu = fits.PrimaryHDU(data=data)
         hdu.header.append(('CTYPE1', 'RA--TAN', 'pixel coordinate system'))
         hdu.header.append(('CUNIT1', 'ARCSEC', 'pixel coordinate unit'))
         hdu.header.append(('CRPIX1', self.xcen, 'Reference pixel in X'))
-        hdu.header.append(('CRVAL1', 0., 'Wavelength of reference pixel'))
+        hdu.header.append(('CRVAL1', 0., 'Reference pixel in X'))
         hdu.header.append(('CDELT1', self.pix_size, 'Pixel size in arcsec'))
         hdu.header.append(('CTYPE2', 'DEC--TAN', 'pixel coordinate system'))
         hdu.header.append(('CUNIT2', 'ARCSEC', 'pixel coordinate unit'))
@@ -147,8 +151,8 @@ class Model3D:
         hdu.header.append(('CDELT2', self.pix_size, 'Pixel size in arcsec'))
         hdu.header.append(('CTYPE3', 'WAVELENGTH', 'pixel coordinate system'))
         hdu.header.append(('CUNIT3', 'Angstrom', 'pixel coordinate unit'))
-        hdu.header.append(('CRPIX3', 1, 'Reference pixel in Y'))
-        hdu.header.append(('CRVAL3', self.lbda0 - self.lrange * self.dlbda / 2, 'Reference pixel'))
+        hdu.header.append(('CRPIX3', 1, 'Wavelength of reference pixel'))
+        hdu.header.append(('CRVAL3', self.lbda0 - self.lrange / 2, 'Reference pixel'))
         hdu.header.append(('CDELT3', self.dlbda, 'Pixel size in angstrom'))
         hdu.header.add_comment('Model Parameters')
         hdu.header.append(('XCEN', self.xcen, 'center abscissa in pixel'), end=True)
@@ -159,7 +163,8 @@ class Model3D:
         hdu.header.append(('RTRUNC', self.rtrunc, 'truncated radius in pixel > flux is null'), end=True)
         hdu.header.append(('MAX_VEL', self.vmax, 'maximum velocity in km/s'), end=True)
         hdu.header.append(('SYST_VEL', self.syst_vel, 'systemic velocity in km/s'), end=True)
-        hdu.header.append(('SIG0', int((self.sig0-1)*self.light_speed), 'dispersion velocity in km/s'), end=True)
+        hdu.header.append(('SIG0', self.sig0*ct.c.value/self.lbda0*1e3, 'dispersion velocity in km/s'), end=True)
         hdulist = fits.HDUList(hdu)
         hdulist.writeto(name + '.fits', checksum=True, overwrite=True)
-        print('fits " {} "  has been written'.format(name))
+        print('fits " {} "  has been written \n'.format(name))
+        # print('\n----------------------------------------\n')

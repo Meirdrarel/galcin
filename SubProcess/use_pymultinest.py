@@ -7,6 +7,7 @@ import pymultinest
 import time
 from Class.Model2D import Model2D
 from Class.PSF import PSF
+from Class.Images import Image, ImageOverSamp
 import Tools.tools as tools
 from astropy.io import ascii
 import matplotlib.pyplot as plt
@@ -35,12 +36,11 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
         cube[0] = cube[0] * 6 - 3 + xcen         # prior between xcen - 5 ans xcen + 5
         cube[1] = cube[1] * 6 - 3 + ycen         # prior between ycen - 5 ans ycen + 5
         cube[2] = cube[2] * 360 - 180            # pos angl between -180 and 180 degree
-        # cube[3] = cube[3] * 40 + incl - 20       # incl between incl - 20 and incl  + 20
-        cube[3] = cube[3] * 80 + 5
+        cube[3] = cube[3] * 20 + incl - 10       # incl between incl - 10 and incl  + 10 degree
+        # cube[3] = cube[3] * 80 + 5               # incl between 5 and 58 degree
         cube[4] = cube[4] * 1000 - 500           # sys vel between -500 and 500km/s
         cube[5] = cube[5] * 500                  # vmax between 0 and 500km/s
-        # cube[6] = cube[6] * 10 + charac_rad - 5  # charac rad between 1 and 15
-        cube[6] = cube[6] * 14 + 1
+        cube[6] = cube[6] * 14 + 1               # charac rad between 1 and 15
 
     def loglike(cube, ndim, nparams):
 
@@ -54,29 +54,26 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
     params = ['xcen', 'ycen', 'pa', 'incl', 'vs', 'vm', 'rd']
     n_params = len(params)
 
-    if os.path.isdir(path+'multinest') is False:
-        os.makedirs(path+'multinest')
+    if rank == 0:
+        if os.path.isdir(path+'multinest') is False:
+            os.makedirs(path+'multinest')
 
     if rank == 0:
         t1 = time.time()
-    pymultinest.run(loglike, prior, n_params, outputfiles_basename=path+'/multinest/output_'+whd, resume=False, verbose=quiet, max_iter=39000,
-                    n_live_points=1000)
+
+    pymultinest.run(loglike, prior, n_params, outputfiles_basename=path+'/multinest/output'+whd+'_', resume=False, verbose=quiet, max_iter=20000)
+
     if rank == 0:
 
         t2 = time.time()
 
         print('fit done in: {:6.2f} s'.format(t2-t1))
 
-        output = pymultinest.Analyzer(n_params=n_params, outputfiles_basename=path+'/multinest/output_'+whd)
+        output = pymultinest.Analyzer(n_params=n_params, outputfiles_basename=path+'/multinest/output'+whd+'_')
         stats = output.get_mode_stats()
-        try:
-            bestfit = output.get_best_fit()['parameters']
-        except IndexError:
-            bestfit = output.get_equal_weighted_posterior()[0, 0:7]
-            model.set_parameters(*bestfit, flux_hd)
 
+        bestfit = stats['modes'][0]['maximum']
         model.set_parameters(*bestfit, flux_hd)
-        model.velocity_map(psf, flux_ld, flux_hd, vel_model)
 
         print('{0:^{width}}{1:^{width}}{2:^{width}}{3:^{width}}{4:^{width}}{5:^{width}}'
               '{6:^{width}}'.format('xcen', 'ycen', 'pa', 'incl', 'vs', 'vm', 'rd', width=12))
@@ -85,9 +82,17 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
         print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}'
               '{4:^{width}.{prec}f}{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*stats['modes'][0]['sigma'], width=12, prec=6))
 
+        if type(flux_hd) is ImageOverSamp:
+            tools.write_fits(0, 0, 0, 0, 0, 0, 0, 0, flux_hd.data, path + '/multinest/flux_hd_interpol')
+
+        model.set_parameters(*bestfit, flux_hd)
+        model.velocity_map(psf, flux_ld, flux_hd, vel_model)
+
         tools.write_fits(*bestfit, sig0, model.vel_map, path+'/multinest/modv'+whd, mask=flux_ld.mask)
+        tools.write_fits(*bestfit, sig0, model.vel_map, path + '/multinest/modv_full' + whd)
         tools.write_fits(*bestfit, sig0, vel.data-model.vel_map, path+'/multinest/resv'+whd, mask=flux_ld.mask)
-        ascii.write(np.array([bestfit, stats['modes'][0]['sigma']]), path+'/multinest/params_fit'+whd+'.fits',
+        tools.write_fits(*bestfit, sig0, model.vel_map_hd, path + '/multinest/modv_hd' + whd, oversample=1 / flux_hd.oversample)
+        ascii.write(np.array([bestfit, stats['modes'][0]['sigma']]), path+'/multinest/params_fit'+whd+'.txt',
                     names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'],
                     formats={'x': '%.6f', 'y': '%.6f', 'pa': '%.6f', 'incl': '%.6f', 'vs': '%.6f', 'vm': '%.6f', 'rd': '%.6f'}, overwrite=True)
 

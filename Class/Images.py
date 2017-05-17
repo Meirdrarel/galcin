@@ -1,6 +1,7 @@
 import numpy as np
 from astropy.io import fits
 from scipy.interpolate import interp2d
+import Tools.tools as tools
 
 
 class Image:
@@ -11,6 +12,7 @@ class Image:
         :param string filename: path+name of the file
         :param string type_im: MUSE, HST etc ... 
         """
+        self.data_rebin = None
 
         if type(filename) is str:
             self.header = fits.getheader(filename)
@@ -20,6 +22,7 @@ class Image:
             self.size = np.array(np.shape(self.data))
             self.len = self.length*self.high
             self.oversample = 1
+            # self.mask = self.data > 5.0
             self.mask = self.data != 0
 
         # Add for create model without images
@@ -33,12 +36,15 @@ class Image:
             self.oversample = 1
             self.mask = self.data != 0
 
+    def conv_inter_flux(self, psf):
+        self.data_rebin = tools.rebin_data(psf.convolution(self.data), self.oversample)
+
 
 class ImageOverSamp(Image):
     def __init__(self, filename, charac_rad):
         Image.__init__(self, filename)
 
-        self.oversample = int(np.ceil(8 / charac_rad))
+        self.oversample = int(np.ceil(10 / charac_rad))
 
         x = np.linspace(0, self.length, self.length)
         y = np.linspace(0, self.high, self.high)

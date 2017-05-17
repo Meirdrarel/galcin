@@ -8,6 +8,7 @@ from astropy.io import ascii
 import Tools.tools as tools
 from Class.Model2D import Model2D
 from Class.PSF import PSF
+from Class.Images import Image, ImageOverSamp
 import Tools.cap_mpfit as mpfit
 
 
@@ -53,8 +54,12 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
 
     # xcen
     # parinfo[0]['fixed'] = 1
+    parinfo[0]['limited'] = [1, 1]
+    parinfo[0]['limits'] = [xcen-5, xcen+5]
     # ycen
     # parinfo[1]['fixed'] = 1
+    parinfo[1]['limited'] = [1, 1]
+    parinfo[1]['limits'] = [ycen-5, ycen+5]
     # Position angle
     parinfo[2]['limited'] = [1, 1]
     parinfo[2]['limits'] = [-180, 180]
@@ -93,14 +98,20 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
     print('{0:^{width}}{1:^{width}}{2:^{width}}{3:^{width}}{4:^{width}}'
           '{5:^{width}}{6:^{width}}'.format('xcen', 'ycen', 'pa', 'incl', 'vs', 'vm', 'rd', width=12))
     print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}{4:^{width}.{prec}f}'
-          '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model.get_parameter(flux_hd), width=12, prec=6))
+          '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model_fit.params, width=12, prec=6))
 
     if os.path.isdir(path+'mpfit') is False:
         os.makedirs(path+'mpfit')
 
     tools.write_fits(*model_fit.params, sig0, model.vel_map, path+'/mpfit/modv'+whd, chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof,
                      mask=flux_ld.mask)
+    tools.write_fits(*model_fit.params, sig0, model.vel_map, path + '/mpfit/modv_full' + whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof)
     tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, path+'/mpfit/resv'+whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
                      mask=flux_ld.mask)
+    tools.write_fits(*model_fit.params, sig0, model.vel_map_hd, path+'/mpfit/modv_hd'+whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
+                     oversample=1/flux_hd.oversample)
     ascii.write(model_fit.params, path+'/mpfit/fit_python'+whd+'.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'],
                 formats={'x': '%.6f', 'y': '%.6f', 'pa': '%.6f', 'incl': '%.6f', 'vs': '%.6f', 'vm': '%.6f', 'rd': '%.6f'}, overwrite=True)
+
+    if type(flux_hd) is ImageOverSamp:
+        tools.write_fits(0, 0, 0, 0, 0, 0, 0, 0, flux_hd.data, path + '/mpfit/flux_hd_interpol')

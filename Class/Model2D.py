@@ -4,6 +4,9 @@ import Tools.tools as tools
 import Tools.velocity_model as vm
 from Class.PSF import PSF
 from Class.Images import Image
+from Class.Debbuger import debbuger
+
+debuger = debbuger('model2D')
 
 
 class Model2D:
@@ -73,7 +76,6 @@ class Model2D:
 
     def velocity_map(self, psf, flux_ld, flux_hd, vel_model):
         """
-
         :param PSF psf:
         :param Image flux_ld:
         :param Image flux_hd:
@@ -84,7 +86,7 @@ class Model2D:
 
         vel_times_flux = tools.rebin_data(psf.convolution(flux_hd.data * self.vel_map_hd), flux_hd.oversample)
 
-        self.vel_map[flux_ld.mask] = vel_times_flux[flux_ld.mask] / flux_ld.data[flux_ld.mask]
+        self.vel_map[flux_ld.mask] = vel_times_flux[flux_ld.mask] / flux_hd.data_rebin[flux_ld.mask]
 
     def linear_velocity_dispersion(self):
         """

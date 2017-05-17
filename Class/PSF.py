@@ -2,11 +2,12 @@ import math
 import numpy as np
 from numpy.fft import fftshift, fft2, ifft2
 from Class.Images import Image
-
+from Class.Debbuger import debbuger
+debuger = debbuger('psf')
 
 class PSF:
 
-    def __init__(self, flux_hd, img_psf=None, fwhm=3):
+    def __init__(self, flux_hd, img_psf=None, fwhm_ld=3.5, smooth=0):
         """
         If psf image isn't given, a gaussian is used
 
@@ -17,23 +18,28 @@ class PSF:
 
         self.psf = img_psf
         self.im_size = flux_hd.size
-        self.fwhm = fwhm
+        self.fwhm = fwhm_ld*flux_hd.oversample
+        self.smooth = smooth*flux_hd.oversample
+        self.fwhm_f = np.sqrt(self.fwhm**2 + self.smooth**2)
 
         if self.psf is None:
+            print('no psf imported')
             # (2*fwhm) is considered to avoid the boundary effect after the convolution
-            self.size = np.array([2 * fwhm, 2 * fwhm])
+            self.size = np.array([2 * self.fwhm_f, 2 * self.fwhm_f])
             ideal_size = 2 ** np.ceil(np.log(self.im_size + 2 * self.size) / math.log(2))
             # to prevent any problems in the future, self.size has been forced to be an array of int
             self.size = np.array((ideal_size - self.im_size) / 2, dtype=int)
 
             y, x = np.indices((self.im_size[0] + 2 * self.size[0], self.im_size[1] + 2 * self.size[1]))
-            sigma = fwhm / (2 * math.sqrt(2 * math.log(2)))
+            sigma = self.fwhm_f / (2 * math.sqrt(2 * math.log(2)))
             self.psf = (1. / (2 * math.pi * sigma ** 2)) * np.exp(-((x - self.im_size[1] / 2 - self.size[1]) ** 2 + (y - self.im_size[0] / 2 - self.size[
                         0]) ** 2) / (2.0 * sigma ** 2))
 
             # normalization in order to ensure flux conservation
             self.psf /= self.psf.sum()
+
         else:
+            print('psf imported')
             self.size = np.array(img_psf.shape)
             self.psf = np.zeros((self.im_size[0] + 2 * self.size[0], self.im_size[1] + 2 * self.size[1]))
             self.psf[self.im_size[0]/2+self.size[0]/2:self.im_size[0]/2+3*self.size[0]/2, self.im_size[1]/2+self.size[1]/2:self.im_size[1]/2+3*self.size[1]/2]\
@@ -53,5 +59,6 @@ class PSF:
         data2[self.size[0]:data.shape[0] + self.size[0], self.size[1]:data.shape[1] + self.size[1]] = data
 
         data_conv = ifft2(fft2(data2) * self.psf_fft2)
+        data_conv = data_conv[self.size[0]:data.shape[0] + self.size[0], self.size[1]:data.shape[1] + self.size[1]].real
 
-        return data_conv[self.size[0]:data.shape[0] + self.size[0], self.size[1]:data.shape[1] + self.size[1]].real
+        return data_conv
