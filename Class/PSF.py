@@ -2,8 +2,7 @@ import math
 import numpy as np
 from numpy.fft import fftshift, fft2, ifft2
 from Class.Images import Image
-from Class.Debbuger import debbuger
-debuger = debbuger('psf')
+
 
 class PSF:
 

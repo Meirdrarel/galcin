@@ -10,7 +10,7 @@ from Class.Model3D import Model3D
 from Class.Clumps import Clumps
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
+from astropy.io import ascii
 
 parser = argparse.ArgumentParser()
 
@@ -22,6 +22,9 @@ parser.add_argument('-vm', default='flat', help='velocity model', type=str)
 parser.add_argument('-clump', nargs='+', dest='ifclump', help='create clump', type=int)
 parser.add_argument('-nocube', action='store_false', dest='ifcube', help='create cube', default=True)
 args = parser.parse_args()
+
+if os.path.isdir(args.path) is False:
+    os.makedirs(args.path)
 
 # parameters for low resolution (typically MUSE)
 pix_size_ld = 0.2  # arcsec
@@ -37,16 +40,19 @@ fwhm_psf_hd = 0.08  # arcsec
 fwhm_lsf_hd = 2.5   # angstrom
 
 # parameters for model
-rd = 2*5      # pixels
+smooth = 0
+rd = 2      # pixels
 vmax = args.vmax   # km/s
 pa = 0       # degree
 incl = args.incl    # degree
 vs = 0       # km/s
-xcen = 10*5    # pixels
-ycen = 10*5    # pixels
-sig0 = 30    # km/s
+xcen = 15  # pixels
+ycen = 15  # pixels
+sig0 = 40    # km/s
 lrange = 50  # angstrom
 rtrunc = 25
+size = (30*5, 30*5)
+
 
 fm_list = {'exp': fm.exponential_disk_intensity, 'flat': fm.flat_disk_intensity}
 vm_list = {'exp': vm.exponential_velocity, 'flat': vm.flat_velocity, 'arctan': vm.arctan_velocity}
@@ -54,7 +60,16 @@ vm_list = {'exp': vm.exponential_velocity, 'flat': vm.flat_velocity, 'arctan': v
 if args.ifcube:
     print('\nCreate Cube')
     # for a field of 4"x4" => 20x20 pixels in muse and 100x100 pixels with hst
-    model = Model3D(xcen, ycen, pa, incl, vs, vmax, rd, rtrunc, sig0, fm_list[args.fm], lbda0, deltal_ld, lrange, pix_size_hd, im_size=(20*5, 20*5), slope=0)
+    over = int(pix_size_ld/pix_size_hd)
+
+    # xcen = (xcen+0.5) * over - 0.5
+    # ycen = (ycen+0.5) * over - 0.5
+
+    xcen *= over
+    ycen *= over
+    rd *= over
+
+    model = Model3D(xcen, ycen, pa, incl, vs, vmax, rd, rtrunc, sig0, fm_list[args.fm], lbda0, deltal_ld, lrange, pix_size_hd, im_size=size, slope=0)
     model.create_cube(vm_list[args.vm])
 
     # cube_conv_smooth = model.conv_psf(model.cube, fwhm_psf_hd/pix_size_hd+2)   # 2 pixels
@@ -75,7 +90,7 @@ if args.ifcube:
 if args.ifclump:
     print('\nCreate Clumps')
     # create clump
-    clump = Clumps(xcen, ycen, pa, incl, vs, vmax, rd, rtrunc, sig0, lbda0, deltal_ld, lrange, pix_size_hd, im_size=(20*5, 20*5), slope=0)
+    clump = Clumps(xcen, ycen, pa, incl, vs, vmax, rd, rtrunc, sig0, lbda0, deltal_ld, lrange, pix_size_hd, im_size=size, slope=0)
     clump.create_clumps(args.ifclump, vm_list[args.vm], fwhm_lsf_ld/deltal_ld)
     clump.write_fits(clump.cube, args.path + 'CLUMP')
 
@@ -94,3 +109,8 @@ if args.ifcube and args.ifclump:
 
     tools.write_fits(xcen, ycen, pa, incl, vs, vmax, rd, sig0, np.sum(cube_conv_SP, axis=0), args.path + 'CUBE_wc_flux_hd', oversample=5)
 
+
+ascii.write(np.array([xcen/over, ycen/over, pa, incl, vs, vmax, rd/over, sig0, fwhm_psf_ld/pix_size_ld, fwhm_lsf_ld, smooth]), args.path + 'param_model.txt',
+            names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd', 'sig0', 'psfx', 'psfz', 'smooth'], format='fixed_width', delimiter=None,
+            formats={'x': '%5.1f', 'y': '%5.1f', 'pa': '%5.1f', 'incl': '%5.1f', 'vs': '%5.1f', 'vm': '%5.1f', 'rd': '%5.1f', 'sig0': '%5.1f',
+                     'psfx': '%5.1f', 'psfz': '%5.1f', 'smooth': '%5.1f'}, overwrite=True)

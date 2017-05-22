@@ -14,6 +14,7 @@ def exponential_velocity(r, rt, vmax):
     rd = rt / 2.15        # disk scale length
     vr = np.zeros(np.shape(r))
     q = np.where(r != 0)      # To prevent any problem in the center
+
     vr[q] = r[q] / rd * vmax / 0.88 * np.sqrt(i0(0.5 * r[q] / rd) * k0(0.5 * r[q] / rd) - i1(0.5 * r[q] / rd) * k1(0.5 * r[q] / rd))
 
     return vr

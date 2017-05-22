@@ -1,7 +1,6 @@
 .idea
 __pycache__
 
-/PlotProba.py
 /cube.sh
 /auto_camel.sh
 /SubProcess/cube.sh
@@ -11,5 +10,11 @@ __pycache__
 /log_debbug_model2D.log
 /log_debbug_psf.log
 /log.log
-/SubProcess/create_vel_model.py
-/SubProcess/create_flux_im.py
+
+/SubProcess/create_vel_map.py
+/SubProcess/create_flux_map.py
+/SubProcess/test.fits
+/SubProcess/test.py
+/Class/Model3D.py
+/SubProcess/create_cube.py
+/Tools/flux_model.py

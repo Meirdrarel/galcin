@@ -53,6 +53,8 @@ class Model2D:
         self.model_incl = incl
         self.model_xcen = xcen * flux_hd.oversample
         self.model_ycen = ycen * flux_hd.oversample
+        # self.model_xcen = (xcen + 0.5) * flux_hd.oversample - 0.5
+        # self.model_ycen = (ycen + 0.5) * flux_hd.oversample - 0.5
         self.model_vmax = max_vel
         self.model_syst_vel = syst_vel
         self.model_charac_rad = charac_rad*flux_hd.oversample

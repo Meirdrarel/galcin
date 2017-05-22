@@ -13,7 +13,8 @@ from astropy.io import ascii
 import matplotlib.pyplot as plt
 
 
-def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path, rank=0, slope=0, quiet=False, whd=''):
+def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path, rank=0, slope=0, quiet=False, whd='', incfix=False, xfix=False,
+                    yfix=False):
     """
 
     :param PSF psf: 
@@ -33,12 +34,23 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
     model = Model2D(flux_ld, flux_hd, sig0, slope=slope)
 
     def prior(cube, ndim, nparams):
-        cube[0] = cube[0] * 6 - 3 + xcen         # prior between xcen - 5 ans xcen + 5
-        cube[1] = cube[1] * 6 - 3 + ycen         # prior between ycen - 5 ans ycen + 5
+        if xfix:
+            cube[0] = cube[0] * 2 - 1 + xcen         # prior between xcen - 1 ans xcen + 1
+        else:
+            cube[0] = cube[0] * 10 - 5 + xcen
+
+        if yfix:
+            cube[1] = cube[1] * 2 - 1 + ycen
+        else:
+            cube[1] = cube[1] * 10 - 5 + ycen         # prior between ycen - 5 ans ycen + 5
+
+        if incfix:
+            cube[3] = cube[3] * 2 + incl - 1       # incl between incl - 1 and incl  + 1 degree
+        else:
+            cube[3] = cube[3] * 80 + 5               # incl between 5 and 85 degree
+
         cube[2] = cube[2] * 360 - 180            # pos angl between -180 and 180 degree
-        cube[3] = cube[3] * 20 + incl - 10       # incl between incl - 10 and incl  + 10 degree
-        # cube[3] = cube[3] * 80 + 5               # incl between 5 and 58 degree
-        cube[4] = cube[4] * 1000 - 500           # sys vel between -500 and 500km/s
+        cube[4] = cube[4] * 200 - 100           # sys vel between -500 and 500km/s
         cube[5] = cube[5] * 500                  # vmax between 0 and 500km/s
         cube[6] = cube[6] * 14 + 1               # charac rad between 1 and 15
 
@@ -93,7 +105,7 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
         tools.write_fits(*bestfit, sig0, vel.data-model.vel_map, path+'/multinest/resv'+whd, mask=flux_ld.mask)
         tools.write_fits(*bestfit, sig0, model.vel_map_hd, path + '/multinest/modv_hd' + whd, oversample=1 / flux_hd.oversample)
         ascii.write(np.array([bestfit, stats['modes'][0]['sigma']]), path+'/multinest/params_fit'+whd+'.txt',
-                    names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'],
+                    names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'], format='fixed_width', delimiter=None,
                     formats={'x': '%.6f', 'y': '%.6f', 'pa': '%.6f', 'incl': '%.6f', 'vs': '%.6f', 'vm': '%.6f', 'rd': '%.6f'}, overwrite=True)
 
         parameters = ['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd']

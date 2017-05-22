@@ -12,7 +12,7 @@ from Class.Images import Image, ImageOverSamp
 import Tools.cap_mpfit as mpfit
 
 
-def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slope=0, quiet=1, whd=''):
+def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slope=0, quiet=1, whd='', incfix = False, xfix=False, yfix=False):
     """
     
     :param PSF psf: 
@@ -53,20 +53,23 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
     parinfo = [{'value': 0., 'fixed': 0, 'limited': [0, 0], 'limits': [0., 0.], 'parname': 0., 'step': 0.} for i in range(len(p0))]
 
     # xcen
-    # parinfo[0]['fixed'] = 1
+    if xfix:
+        parinfo[0]['fixed'] = 1
     parinfo[0]['limited'] = [1, 1]
     parinfo[0]['limits'] = [xcen-5, xcen+5]
     # ycen
-    # parinfo[1]['fixed'] = 1
+    if yfix:
+        parinfo[1]['fixed'] = 1
     parinfo[1]['limited'] = [1, 1]
     parinfo[1]['limits'] = [ycen-5, ycen+5]
     # Position angle
     parinfo[2]['limited'] = [1, 1]
     parinfo[2]['limits'] = [-180, 180]
     # Inclination
-    # parinfo[3]['fixed'] = 1
+    if incfix:
+        parinfo[3]['fixed'] = 1
     parinfo[3]['limited'] = [1, 1]
-    parinfo[3]['limits'] = [5, 85]
+    parinfo[3]['limits'] = [incl - 5, incl + 5]
     # syst vel
     parinfo[4]['limited'] = [1, 1]
     parinfo[4]['limits'] = [-500, 500]
@@ -99,6 +102,8 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
           '{5:^{width}}{6:^{width}}'.format('xcen', 'ycen', 'pa', 'incl', 'vs', 'vm', 'rd', width=12))
     print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}{4:^{width}.{prec}f}'
           '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model_fit.params, width=12, prec=6))
+    print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}{4:^{width}.{prec}f}'
+          '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model_fit.perror, width=12, prec=6))
 
     if os.path.isdir(path+'mpfit') is False:
         os.makedirs(path+'mpfit')
@@ -109,9 +114,11 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
     tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, path+'/mpfit/resv'+whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
                      mask=flux_ld.mask)
     tools.write_fits(*model_fit.params, sig0, model.vel_map_hd, path+'/mpfit/modv_hd'+whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
-                     oversample=1/flux_hd.oversample)
-    ascii.write(model_fit.params, path+'/mpfit/fit_python'+whd+'.txt', names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'],
-                formats={'x': '%.6f', 'y': '%.6f', 'pa': '%.6f', 'incl': '%.6f', 'vs': '%.6f', 'vm': '%.6f', 'rd': '%.6f'}, overwrite=True)
+                     oversample=1/flux_hd.oversample),
+    ascii.write(np.array([[model_fit.params, model_fit.fnorm, model_fit.dof], model_fit.perror]), path + '/mpfit/fit_python' + whd + '.txt',
+                names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd', 'chi2', 'dof'], format='fixed_width', delimiter=None,
+                formats={'x': '%10.6f', 'y': '%10.6f', 'pa': '%10.6f', 'incl': '%10.6f', 'vs': '%10.6f', 'vm': '%10.6f', 'rd': '%10.6f', 'chi2': '%10.6f',
+                         'dof': '%10.6f'}, overwrite=True)
 
     if type(flux_hd) is ImageOverSamp:
         tools.write_fits(0, 0, 0, 0, 0, 0, 0, 0, flux_hd.data, path + '/mpfit/flux_hd_interpol')

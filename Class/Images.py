@@ -22,7 +22,6 @@ class Image:
             self.size = np.array(np.shape(self.data))
             self.len = self.length*self.high
             self.oversample = 1
-            # self.mask = self.data > 5.0
             self.mask = self.data != 0
 
         # Add for create model without images
@@ -56,7 +55,6 @@ class ImageOverSamp(Image):
 
             func = interp2d(x, y, data, kind='cubic', fill_value=0)
             self.data = np.array(func(new_x, new_y)).transpose()
-
             self.high *= self.oversample
             self.length *= self.oversample
             self.size *= self.oversample

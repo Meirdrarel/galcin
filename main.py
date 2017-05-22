@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 import argparse
-
-import numpy as np
 from astropy.io import ascii, fits
-
 import Tools.tools as tools
 import Tools.velocity_model as vm
 from Class.Images import Image, ImageOverSamp
@@ -26,6 +23,9 @@ parser.add_argument('-psf', dest='psf', default=None)
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--mpfit', action='store_false', default=False, dest='mpfit_multinest')
 group.add_argument('--multinest', action='store_true', dest='mpfit_multinest')
+parser.add_argument('-incfix', default=False, action='store_true')
+parser.add_argument('-xfix', default=False, action='store_true')
+parser.add_argument('-yfix', default=False, action='store_true')
 args = parser.parse_args()
 
 params_file = tools.search_file(args.path, args.input_txt)
@@ -66,10 +66,12 @@ print(' using fwh  {} pixels for HD with oversample {}'.format(psf.fwhm_f, flux_
 flux_hd.conv_inter_flux(psf)
 
 if args.mpfit_multinest is True:
-    use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], args.path, slope=args.slope, quiet=args.verbose, whd=whd)
+    use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], args.path, slope=args.slope, quiet=args.verbose, whd=whd,
+                    incfix=args.incfix, xfix=args.xfix, yfix=args.yfix)
 else:
     if args.verbose:
         quiet = 0
     else:
         quiet = 1
-    use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], args.path, slope=args.slope, quiet=quiet, whd=whd)
+    use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name[args.model], args.path, slope=args.slope, quiet=quiet, whd=whd,
+              incfix=args.incfix, xfix=args.xfix, yfix=args.yfix)

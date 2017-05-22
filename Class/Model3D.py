@@ -11,7 +11,7 @@ class Model3D:
                  slope=0):
 
         # self.light_speed = 299792.458  # km/s
-        self.center_bright = 2000
+        self.center_bright = 1500 + np.random.randint(0, 1000, 1)
 
         self.xcen = xcen
         self.ycen = ycen
