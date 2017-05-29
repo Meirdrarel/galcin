@@ -69,7 +69,7 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
     if incfix:
         parinfo[3]['fixed'] = 1
     parinfo[3]['limited'] = [1, 1]
-    parinfo[3]['limits'] = [incl - 5, incl + 5]
+    parinfo[3]['limits'] = [5, 85]
     # syst vel
     parinfo[4]['limited'] = [1, 1]
     parinfo[4]['limits'] = [-500, 500]
@@ -79,7 +79,7 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
     # characteristic radius
     # parinfo[6]['fixed'] = 1
     parinfo[6]['limited'] = [1, 1]
-    parinfo[6]['limits'] = [1, charac_rad+10]
+    parinfo[6]['limits'] = [0.5, charac_rad+10]
 
     for i in range(len(p0)):
         parinfo[i]['value'] = p0[i]
@@ -87,35 +87,54 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
 
     funckw = {'data': vel, 'flux_ld': flux_ld, 'flux_hd': flux_hd, 'err': errvel, 'vel_model': model_name, 'psf': psf}
 
-    print('\nstart fit with mpfit')
+    print('\n start fit with mpfit')
     t1 = time.time()
 
     model_fit = mpfit.mpfit(func_fit, parinfo=parinfo, functkw=funckw, autoderivative=1, gtol=1e-10, ftol=1e-10, xtol=1e-10, quiet=quiet)
 
     t2 = time.time()
-    print('\nfit done in: {:6.2f} s'.format(t2-t1))
+    print(' fit done in: {:6.2f} s\n'.format(t2-t1))
 
-    print('fit status:', model_fit.status)
-    print('Chi2R: {} DOF: {}'.format(model_fit.fnorm/model_fit.dof, model_fit.dof,))
+    print(' fit status:', model_fit.status)
+    print(' Chi2R: {} DOF: {}'.format(model_fit.fnorm/model_fit.dof, model_fit.dof,))
 
+    print('', '-' * 81)
     print('{0:^{width}}{1:^{width}}{2:^{width}}{3:^{width}}{4:^{width}}'
           '{5:^{width}}{6:^{width}}'.format('xcen', 'ycen', 'pa', 'incl', 'vs', 'vm', 'rd', width=12))
     print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}{4:^{width}.{prec}f}'
           '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model_fit.params, width=12, prec=6))
     print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}{4:^{width}.{prec}f}'
           '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model_fit.perror, width=12, prec=6))
+    print('', '-' * 81)
 
-    if os.path.isdir(path+'mpfit') is False:
-        os.makedirs(path+'mpfit')
+    dirname = 'mpfit'
+    if incfix or xfix or yfix:
+        dirname += '_'
+    if xfix:
+        dirname += 'x'
+    if yfix:
+        dirname += 'y'
+    if incfix:
+        dirname += 'i'
+    if os.path.isdir(path+dirname) is False:
+        os.makedirs(path+dirname)
 
     tools.write_fits(*model_fit.params, sig0, model.vel_map, path+'/mpfit/modv'+whd, chi2r=model_fit.fnorm/model_fit.dof, dof=model_fit.dof,
                      mask=flux_ld.mask)
-    tools.write_fits(*model_fit.params, sig0, model.vel_map, path + '/mpfit/modv_full' + whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof)
     tools.write_fits(*model_fit.params, sig0, vel.data-model.vel_map, path+'/mpfit/resv'+whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
                      mask=flux_ld.mask)
     tools.write_fits(*model_fit.params, sig0, model.vel_map_hd, path+'/mpfit/modv_hd'+whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
                      oversample=1/flux_hd.oversample),
-    ascii.write(np.array([[model_fit.params, model_fit.fnorm, model_fit.dof], model_fit.perror]), path + '/mpfit/fit_python' + whd + '.txt',
+
+    model.vel_disp_map(flux_ld, flux_hd, psf)
+    tools.write_fits(*model_fit.params, sig0, model.vel_disp, path + '/mpfit/modd' + whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
+                     mask=flux_ld.mask)
+    # tools.write_fits(*model_fit.params, sig0, vel.data - model.vel_map, path + '/mpfit/resd' + whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
+    #                  mask=flux_ld.mask)
+
+    param_write = np.append(np.append(model_fit.params, model_fit.fnorm), model_fit.dof)
+    error = np.append(np.append(model_fit.perror, 0), 0)
+    ascii.write(np.array([param_write, error]), path + '/mpfit/fit_python' + whd + '.txt',
                 names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd', 'chi2', 'dof'], format='fixed_width', delimiter=None,
                 formats={'x': '%10.6f', 'y': '%10.6f', 'pa': '%10.6f', 'incl': '%10.6f', 'vs': '%10.6f', 'vm': '%10.6f', 'rd': '%10.6f', 'chi2': '%10.6f',
                          'dof': '%10.6f'}, overwrite=True)

@@ -5,12 +5,10 @@ import Tools.tools as tools
 
 
 class Image:
-    def __init__(self, filename):
+    def __init__(self, filename, mask=True):
         """
         
-        :param float charac_rad:
         :param string filename: path+name of the file
-        :param string type_im: MUSE, HST etc ... 
         """
         self.data_rebin = None
 
@@ -22,7 +20,7 @@ class Image:
             self.size = np.array(np.shape(self.data))
             self.len = self.length*self.high
             self.oversample = 1
-            self.mask = self.data != 0
+            self.mask = self.data >= 0.1
 
         # Add for create model without images
         if type(filename) is np.ndarray:
@@ -33,27 +31,29 @@ class Image:
             self.length = self.size[1]
             self.len = self.length*self.high
             self.oversample = 1
-            self.mask = self.data != 0
+            self.mask = self.data >= 0.1
 
     def conv_inter_flux(self, psf):
         self.data_rebin = tools.rebin_data(psf.convolution(self.data), self.oversample)
 
 
 class ImageOverSamp(Image):
-    def __init__(self, filename, charac_rad):
+    def __init__(self, filename, charac_rad, oversamp=None):
         Image.__init__(self, filename)
 
-        self.oversample = int(np.ceil(10 / charac_rad))
+        if oversamp:
+            self.oversample = oversamp
+        else:
+            self.oversample = int(np.ceil(8 / charac_rad))  # from idl code
 
-        x = np.linspace(0, self.length, self.length)
-        y = np.linspace(0, self.high, self.high)
+        x = np.linspace(0, self.length, self.length)  # + 0.5*self.oversample
+        y = np.linspace(0, self.high, self.high)  # + 0.5*self.oversample
         new_x = np.linspace(0, self.length, self.length * int(self.oversample))
         new_y = np.linspace(0, self.high, self.high * int(self.oversample))
         data = np.reshape(self.data, -1)
 
         if self.oversample > 1:
-
-            func = interp2d(x, y, data, kind='cubic', fill_value=0)
+            func = interp2d(x, y, data, kind='linear', fill_value=0)
             self.data = np.array(func(new_x, new_y)).transpose()
             self.high *= self.oversample
             self.length *= self.oversample

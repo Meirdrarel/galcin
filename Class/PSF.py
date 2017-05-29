@@ -6,7 +6,7 @@ from Class.Images import Image
 
 class PSF:
 
-    def __init__(self, flux_hd, img_psf=None, fwhm_ld=3.5, smooth=0):
+    def __init__(self, flux_hd, img_psf=None, fwhm_ld=3.5, smooth=0, rank=0):
         """
         If psf image isn't given, a gaussian is used
 
@@ -22,7 +22,6 @@ class PSF:
         self.fwhm_f = np.sqrt(self.fwhm**2 + self.smooth**2)
 
         if self.psf is None:
-            print('no psf imported')
             # (2*fwhm) is considered to avoid the boundary effect after the convolution
             self.size = np.array([2 * self.fwhm_f, 2 * self.fwhm_f])
             ideal_size = 2 ** np.ceil(np.log(self.im_size + 2 * self.size) / math.log(2))
@@ -38,7 +37,6 @@ class PSF:
             self.psf /= self.psf.sum()
 
         else:
-            print('psf imported')
             self.size = np.array(img_psf.shape)
             self.psf = np.zeros((self.im_size[0] + 2 * self.size[0], self.im_size[1] + 2 * self.size[1]))
             self.psf[self.im_size[0]/2+self.size[0]/2:self.im_size[0]/2+3*self.size[0]/2, self.im_size[1]/2+self.size[1]/2:self.im_size[1]/2+3*self.size[1]/2]\

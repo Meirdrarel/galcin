@@ -1,20 +1,10 @@
 .idea
 __pycache__
 
-/cube.sh
 /auto_camel.sh
 /SubProcess/cube.sh
-/Class/Debbuger.py
-/log_debbug_mpfit.log
-/log_debbug_main.log
-/log_debbug_model2D.log
-/log_debbug_psf.log
-/log.log
 
-/SubProcess/create_vel_map.py
-/SubProcess/create_flux_map.py
 /SubProcess/test.fits
 /SubProcess/test.py
-/Class/Model3D.py
-/SubProcess/create_cube.py
-/Tools/flux_model.py
+/fit.sh
+/SubProcess/auto_cube.sh

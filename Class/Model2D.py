@@ -1,12 +1,9 @@
 import math
 import numpy as np
 import Tools.tools as tools
-import Tools.velocity_model as vm
 from Class.PSF import PSF
 from Class.Images import Image
-from Class.Debbuger import debbuger
-
-debuger = debbuger('model2D')
+import matplotlib.pyplot as plt
 
 
 class Model2D:
@@ -34,7 +31,7 @@ class Model2D:
         self.model_size = None
         self.vel_map = np.zeros(flux_ld.size)
         self.vel_map_hd = np.zeros(flux_hd.size)
-        self.vel_masked = None
+        self.vel_disp = None
 
     def set_parameters(self, xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad, flux_hd):
         """
@@ -51,10 +48,8 @@ class Model2D:
 
         self.model_pos_angl = pos_angl
         self.model_incl = incl
-        self.model_xcen = xcen * flux_hd.oversample
-        self.model_ycen = ycen * flux_hd.oversample
-        # self.model_xcen = (xcen + 0.5) * flux_hd.oversample - 0.5
-        # self.model_ycen = (ycen + 0.5) * flux_hd.oversample - 0.5
+        self.model_xcen = (xcen + 0.5) * flux_hd.oversample - 0.5
+        self.model_ycen = (ycen + 0.5) * flux_hd.oversample - 0.5
         self.model_vmax = max_vel
         self.model_syst_vel = syst_vel
         self.model_charac_rad = charac_rad*flux_hd.oversample
@@ -101,7 +96,7 @@ class Model2D:
 
         return sig
 
-    def square_vel_disp(self, flux_ld, flux_hd, psf):
+    def vel_disp_map(self, flux_ld, flux_hd, psf):
         """
 
         :param PSF psf:
@@ -116,13 +111,13 @@ class Model2D:
 
         sig = self.linear_velocity_dispersion()
 
-        term1[flux_ld.mask] = tools.rebin_data(psf.convolution(sig ** 2 * flux_hd.data), flux_hd.oversample)[flux_ld.mask] / flux_ld.data[flux_ld.mask]
-        term2[flux_ld.mask] = tools.rebin_data(psf.convolution(self.vel_map_hd ** 2 * flux_hd.data), flux_hd.oversample)[flux_ld.mask] / flux_ld.data[
-            flux_ld.mask]
+        term1[flux_ld.mask] = tools.rebin_data(psf.convolution(sig ** 2 * flux_hd.data), flux_hd.oversample)[flux_ld.mask] / flux_hd.data_rebin[flux_ld.mask]
+        term2[flux_ld.mask] = tools.rebin_data(psf.convolution(self.vel_map_hd ** 2 * flux_hd.data), flux_hd.oversample)[flux_ld.mask] \
+                              / flux_hd.data_rebin[flux_ld.mask]
         term3[flux_ld.mask] = (tools.rebin_data(psf.convolution(self.vel_map_hd * flux_hd.data), flux_hd.oversample)[flux_ld.mask] /
-                               flux_ld.data[flux_ld.mask]) ** 2
+                               flux_hd.data_rebin[flux_ld.mask]) ** 2
 
-        return term1 + term2 - term3
+        self.vel_disp = np.sqrt(term1 + term2 - term3)
 
     def get_parameter(self, flux_hd):
         """

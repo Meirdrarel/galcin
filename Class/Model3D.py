@@ -3,13 +3,11 @@ from numpy.fft import fftshift, fft2, ifft2, irfft, rfft
 from astropy.io import ascii, fits
 import astropy.constants as ct
 import Tools.tools as tools
-import matplotlib.pyplot as plt
 
 
 class Model3D:
     def __init__(self, xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad, rtrunc, sig0, flux_model, lbda0, dlbda, lrange, pix_size, im_size=(240, 240),
                  slope=0):
-
         # self.light_speed = 299792.458  # km/s
         self.center_bright = 1500 + np.random.randint(0, 1000, 1)
 
@@ -27,7 +25,7 @@ class Model3D:
         self.dlbda = dlbda
 
         self.im_size = im_size
-        self.radius, self.theta = tools.sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=im_size)
+        self.radius, self.ctheta = tools.sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=im_size)
 
         self.lsf_size = int(np.ceil(lrange / dlbda))
         self.pix_size = pix_size
@@ -55,7 +53,7 @@ class Model3D:
         vr = vel_model(self.radius, self.charac_rad, self.vmax)
 
         # Calculation of the velocity field
-        v = vr * np.sin(np.radians(self.incl)) * self.theta + self.syst_vel
+        v = vr * np.sin(np.radians(self.incl)) * self.ctheta + self.syst_vel
 
         print('\nafter projection, min vel : {:3.3f} and max vel : {:3.3f} with vs : {:3.1f}'.format(np.min(v), np.max(v), self.syst_vel))
 
@@ -127,8 +125,8 @@ class Model3D:
     def write_fits(self, data, name, oversample=1, verbose=True):
         if oversample != 1:
             self.pix_size *= oversample
-            self.xcen /= oversample
-            self.ycen /= oversample
+            self.xcen = (self.xcen+0.5)/oversample-0.5
+            self.ycen = (self.ycen+0.5)/oversample-0.5
             self.charac_rad /= oversample
             self.rtrunc /= oversample
             if verbose:

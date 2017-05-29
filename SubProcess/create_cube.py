@@ -21,6 +21,8 @@ parser.add_argument('-fm', default='flat', help='flux model', type=str)
 parser.add_argument('-vm', default='flat', help='velocity model', type=str)
 parser.add_argument('-clump', nargs='+', dest='ifclump', help='create clump', type=int)
 parser.add_argument('-nocube', action='store_false', dest='ifcube', help='create cube', default=True)
+parser.add_argument('-rd', default=3, type=float, help='characteristic radius of the model, by default is 3 pixels')
+parser.add_argument('-rt', default=8, type=int, help='truncated radius after which flux is set to 0')
 args = parser.parse_args()
 
 if os.path.isdir(args.path) is False:
@@ -41,7 +43,7 @@ fwhm_lsf_hd = 2.5   # angstrom
 
 # parameters for model
 smooth = 0
-rd = 2      # pixels
+rd = args.rd      # pixels
 vmax = args.vmax   # km/s
 pa = 0       # degree
 incl = args.incl    # degree
@@ -50,51 +52,51 @@ xcen = 15  # pixels
 ycen = 15  # pixels
 sig0 = 40    # km/s
 lrange = 50  # angstrom
-rtrunc = 25
+rtrunc = args.rt
 size = (30*5, 30*5)
-
+fwhm = fwhm_psf_ld/pix_size_ld  # correspond to 3.5 pixels
 
 fm_list = {'exp': fm.exponential_disk_intensity, 'flat': fm.flat_disk_intensity}
 vm_list = {'exp': vm.exponential_velocity, 'flat': vm.flat_velocity, 'arctan': vm.arctan_velocity}
 
+over = int(pix_size_ld/pix_size_hd)
+
+new_xcen = (xcen + 0.5) * over - 0.5
+new_ycen = (ycen + 0.5) * over - 0.5
+new_rd = rd * over
+new_rtrunc = rtrunc * over
+
 if args.ifcube:
     print('\nCreate Cube')
     # for a field of 4"x4" => 20x20 pixels in muse and 100x100 pixels with hst
-    over = int(pix_size_ld/pix_size_hd)
 
-    # xcen = (xcen+0.5) * over - 0.5
-    # ycen = (ycen+0.5) * over - 0.5
-
-    xcen *= over
-    ycen *= over
-    rd *= over
-
-    model = Model3D(xcen, ycen, pa, incl, vs, vmax, rd, rtrunc, sig0, fm_list[args.fm], lbda0, deltal_ld, lrange, pix_size_hd, im_size=size, slope=0)
+    model = Model3D(new_xcen, new_ycen, pa, incl, vs, vmax, new_rd, new_rtrunc, sig0, fm_list[args.fm], lbda0, deltal_ld, lrange, pix_size_hd, im_size=size,
+                    slope=0)
     model.create_cube(vm_list[args.vm])
 
     # cube_conv_smooth = model.conv_psf(model.cube, fwhm_psf_hd/pix_size_hd+2)   # 2 pixels
     cube_conv_SP = model.conv_lsf(model.cube, fwhm_lsf_ld/deltal_ld)
 
-    tools.write_fits(xcen, ycen, pa, incl, vs, vmax, rd, sig0, np.sum(cube_conv_SP, axis=0), args.path+'CUBE_flux_hd', oversample=5)
+    tools.write_fits(new_xcen, new_ycen, pa, incl, vs, vmax, new_rd, sig0, np.sum(cube_conv_SP, axis=0), args.path+'CUBE_flux_hd', oversample=5)
     model.write_fits(cube_conv_SP, args.path+'CUBE')
 
-    cube_conv = model.conv_psf(cube_conv_SP, fwhm_psf_ld/pix_size_ld*5)   # 3.5*5 = 17.5 HST's pixels
+    cube_conv = model.conv_psf(cube_conv_SP, fwhm*5)   # 3.5*5 = 17.5 HST's pixels
     cube_rebin = tools.rebin_data(cube_conv, int(pix_size_ld/pix_size_hd))
     model.write_fits(cube_rebin, args.path+'CUBE_rebin', oversample=int(pix_size_ld/pix_size_hd))
 
-    tools.write_fits(xcen, ycen, pa, incl, vs, vmax, rd, sig0, model.v, args.path+'CUBE_vel_map_hd')
+    tools.write_fits(new_xcen, new_ycen, pa, incl, vs, vmax, new_rd, sig0, model.v, args.path+'CUBE_vel_map_hd')
 
     modv_ld = tools.rebin_data(model.v, int(pix_size_ld/pix_size_hd))
-    tools.write_fits(xcen/5, ycen/5, pa, incl, vs, vmax, rd/5, sig0, modv_ld, args.path+'CUBE_vel_map', oversample=int(pix_size_ld/pix_size_hd))
+    tools.write_fits(new_xcen/5, new_ycen/5, pa, incl, vs, vmax, new_rd/5, sig0, modv_ld, args.path+'CUBE_vel_map', oversample=int(pix_size_ld/pix_size_hd))
 
 if args.ifclump:
     print('\nCreate Clumps')
     # create clump
-    clump = Clumps(xcen, ycen, pa, incl, vs, vmax, rd, rtrunc, sig0, lbda0, deltal_ld, lrange, pix_size_hd, im_size=size, slope=0)
+    clump = Clumps(new_xcen, new_ycen, pa, incl, vs, vmax, new_rd, new_rtrunc, sig0, lbda0, deltal_ld, lrange, pix_size_hd, im_size=size, slope=0)
     clump.create_clumps(args.ifclump, vm_list[args.vm], fwhm_lsf_ld/deltal_ld)
     clump.write_fits(clump.cube, args.path + 'CLUMP')
 
-    clump_conv = clump.conv_psf(clump.cube, fwhm_psf_ld/pix_size_ld*5)   # 3.5*5 = 17.5 HST's pixels
+    clump_conv = clump.conv_psf(clump.cube, fwhm*5)   # 3.5*5 = 17.5 HST's pixels
     clump_rebin = tools.rebin_data(clump_conv, int(pix_size_ld/pix_size_hd))
     clump.write_fits(clump_rebin, args.path+'CLUMP_rebin', oversample=int(pix_size_ld/pix_size_hd))
 
@@ -107,10 +109,11 @@ if args.ifcube and args.ifclump:
     cube_rebin += clump_rebin
     model.write_fits(cube_rebin, args.path + 'CUBE_wc_rebin', oversample=int(pix_size_ld / pix_size_hd), verbose=False)
 
-    tools.write_fits(xcen, ycen, pa, incl, vs, vmax, rd, sig0, np.sum(cube_conv_SP, axis=0), args.path + 'CUBE_wc_flux_hd', oversample=5)
+    tools.write_fits(new_xcen, new_ycen, pa, incl, vs, vmax, new_rd, sig0, np.sum(cube_conv_SP, axis=0), args.path + 'CUBE_wc_flux_hd', oversample=5)
 
 
-ascii.write(np.array([xcen/over, ycen/over, pa, incl, vs, vmax, rd/over, sig0, fwhm_psf_ld/pix_size_ld, fwhm_lsf_ld, smooth]), args.path + 'param_model.txt',
+ascii.write(np.array([xcen, ycen, pa, incl, vs, vmax, rd, sig0, fwhm, fwhm_lsf_ld, smooth]),
+            args.path + 'param_model.txt',
             names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd', 'sig0', 'psfx', 'psfz', 'smooth'], format='fixed_width', delimiter=None,
             formats={'x': '%5.1f', 'y': '%5.1f', 'pa': '%5.1f', 'incl': '%5.1f', 'vs': '%5.1f', 'vm': '%5.1f', 'rd': '%5.1f', 'sig0': '%5.1f',
                      'psfx': '%5.1f', 'psfz': '%5.1f', 'smooth': '%5.1f'}, overwrite=True)
