@@ -83,7 +83,7 @@ def main(parser):
         print('\nCreate Cube')
         # for a field of 4"x4" => 20x20 pixels in muse and 100x100 pixels with hst
 
-        model = Model3D(new_xcen, new_ycen, pa, incl, vs, vmax, new_rdf, new_rdv, new_rtrunc, sig0, fm_list[args.fm], lbda0, deltal_ld, lrange, pix_size_hd, \
+        model = Model3D(new_xcen, new_ycen, pa, incl, vs, vmax, new_rdf, new_rdv, new_rtrunc, sig0, fm_list[args.fm], lbda0, deltal_ld, lrange, pix_size_hd,
                         im_size=size, slope=0)
         model.create_cube(vm_list[args.vm])
 
