@@ -10,23 +10,23 @@ from SubProcess.use_pymultinest import use_pymultinest
 
 
 def main(parser):
-    parser.add_argument('model')
-    parser.add_argument('path')
-    parser.add_argument('input_txt')
-    parser.add_argument('fits_ld')
-    parser.add_argument('fits_vel')
-    parser.add_argument('fits_evel')
-    parser.add_argument('-hd', '--high', dest="fits_hd")
-    parser.add_argument('-v', '--verbose', default=False, action='store_true', dest='verbose')
-    parser.add_argument('-slope', dest="slope", type=float, default=0.)
-    parser.add_argument('-psf', dest='psf', default=None)
+    parser.add_argument('model', help="model of the velocity field exp, flat, arctan etc")
+    parser.add_argument('path', help="path to the directory where files are")
+    parser.add_argument('input_txt', help="txt file which contain the initial parameters for the model")
+    parser.add_argument('fits_ld', help="fits file of the flux of the galaxy in 'low resolution'")
+    parser.add_argument('fits_vel', help="fits file of the velocity field in the same resolution as the flux fits")
+    parser.add_argument('fits_evel', help="fits file of the error on the velocity field")
+    parser.add_argument('-hd', '--high', dest="fits_hd", help="fits file of the flux of the galaxy in higher resolution")
+    parser.add_argument('-v', '--verbose', default=False, action='store_true', dest='verbose', help="to see verbose of fit's method")
+    parser.add_argument('-slope', '--slope', dest="slope", type=float, default=0., help="slope of the dispersion, default is 0")
+    parser.add_argument('-psf', '--psf', dest='psf', default=None, help="fits of the psf of the low resolution flux, if None a gaussian is use")
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('--mpfit', action='store_false', default=False, dest='mpfit_multinest')
-    group.add_argument('--multinest', action='store_true', dest='mpfit_multinest')
-    parser.add_argument('-nbp', default=19000, type=int, help='number of calculated points by multinest, by default set to 19000 plus 1000 live point')
-    parser.add_argument('-incfix', default=False, action='store_true')
-    parser.add_argument('-xfix', default=False, action='store_true')
-    parser.add_argument('-yfix', default=False, action='store_true')
+    group.add_argument('--mpfit', action='store_false', default=False, dest='mpfit_multinest', help="use chi square reduction method for fit")
+    group.add_argument('--multinest', action='store_true', dest="mpfit_multinest", help="use a bayesian method for fit")
+    parser.add_argument('-nbp', default=19000, type=int, help="number of calculated points by multinest, by default set to 19000 plus 1000 live point")
+    parser.add_argument('-incfix', '--incfix', default=False, action='store_true', help="fix the inclination to which is in the txt file")
+    parser.add_argument('-xfix', '--xfix', default=False, action='store_true', help="fix the position in x to which is in the txt file")
+    parser.add_argument('-yfix', '--yfix', default=False, action='store_true', help="fix the position in y to which is in the txt file")
     args = parser.parse_args()
 
     print('\n entering in directory {}'.format(args.path.split('/')[-2]))
@@ -81,7 +81,8 @@ def main(parser):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Fit program for velocity field of galaxies \ndeveloped on python 3.6 \n@uthor:",
+                                     formatter_class=argparse.RawTextHelpFormatter)
     main(parser)
 
 

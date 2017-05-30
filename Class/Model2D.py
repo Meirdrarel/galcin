@@ -7,15 +7,23 @@ import matplotlib.pyplot as plt
 
 
 class Model2D:
+    """Model in 2D of the velocity filed of a galaxy
 
+        Compute the velocity field and the dispersion of a model using observed data in input.
+
+        :Example:
+
+        $ model = Model2D(flux_ld, flux_hd, init_disp)
+        $ model.set_parameters(xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad, flux_hd)
+        $ model.velocity_map(psf, flux_ld, flux_hd, vel_model
+
+        Parameters:
+            :param float sig0: velocity dispersion of the model
+            :param float slope: slope of the velocity dispersion
+            :param Image flux_ld: object which represent the flux in "low resolution" of the observed galaxy
+            :param Image flux_hd: object which represent the flux in "high resolution" of the observed galaxy
+        """
     def __init__(self, flux_ld, flux_hd, sig0, slope=0.):
-        """
-
-        :param float sig0: velocity dispersion of the model
-        :param float slope: slope of the velocity dispersion
-        :param Image flux_ld: image of observed galaxy
-        :param Image flux_hd: image of observed galaxy
-        """
 
         self.model_pos_angl = None
         self.model_incl = None

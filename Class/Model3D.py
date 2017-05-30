@@ -6,7 +6,7 @@ import Tools.tools as tools
 
 
 class Model3D:
-    def __init__(self, xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad, rtrunc, sig0, flux_model, lbda0, dlbda, lrange, pix_size, im_size=(240, 240),
+    def __init__(self, xcen, ycen, pos_angl, incl, syst_vel, max_vel, rdf, rdv, rtrunc, sig0, flux_model, lbda0, dlbda, lrange, pix_size, im_size=(240, 240),
                  slope=0):
         # self.light_speed = 299792.458  # km/s
         self.center_bright = 1500 + np.random.randint(0, 1000, 1)
@@ -17,7 +17,8 @@ class Model3D:
         self.incl = incl
         self.syst_vel = syst_vel
         self.vmax = max_vel
-        self.charac_rad = charac_rad
+        self.rdv = rdv
+        self.rdf = rdf
         self.lbda0 = lbda0
         self.sig0 = sig0/ct.c.value*1e3*self.lbda0
         # self.sig0 = sig0/self.light_speed + 1
@@ -50,7 +51,7 @@ class Model3D:
         :return ndarray:
         """
 
-        vr = vel_model(self.radius, self.charac_rad, self.vmax)
+        vr = vel_model(self.radius, self.rdv, self.vmax)
 
         # Calculation of the velocity field
         v = vr * np.sin(np.radians(self.incl)) * self.ctheta + self.syst_vel
@@ -61,7 +62,7 @@ class Model3D:
 
     def create_cube(self, vel_model):
 
-        self.flux = self.flux_model(self.xcen, self.ycen, self.pos_angl, self.incl, self.charac_rad, self.center_bright, self.rtrunc, self.im_size)
+        self.flux = self.flux_model(self.xcen, self.ycen, self.pos_angl, self.incl, self.rdf, self.center_bright, self.rtrunc, self.im_size)
 
         v = self.disk_velocity(vel_model)
         v[np.where(self.radius > self.rtrunc)] = 0
@@ -127,7 +128,8 @@ class Model3D:
             self.pix_size *= oversample
             self.xcen = (self.xcen+0.5)/oversample-0.5
             self.ycen = (self.ycen+0.5)/oversample-0.5
-            self.charac_rad /= oversample
+            self.rdv /= oversample
+            self.rdf /= oversample
             self.rtrunc /= oversample
             if verbose:
                 print('----------------------------------------\nfor low resolution :')
@@ -157,7 +159,8 @@ class Model3D:
         hdu.header.append(('YCEN', self.ycen, 'center ordinate in pixel'), end=True)
         hdu.header.append(('PA', self.pos_angl, 'position angle in degree'), end=True)
         hdu.header.append(('INCL', self.incl, 'inclination in degree'), end=True)
-        hdu.header.append(('RD', self.charac_rad, 'characteristic radius in pixel'), end=True)
+        hdu.header.append(('RDF', self.rdf, 'characteristic radius of flux in pixel'), end=True)
+        hdu.header.append(('RDV', self.rdv, 'characteristic radius of velocity in pixel'), end=True)
         hdu.header.append(('RTRUNC', self.rtrunc, 'truncated radius in pixel > flux is null'), end=True)
         hdu.header.append(('MAX_VEL', self.vmax, 'maximum velocity in km/s'), end=True)
         hdu.header.append(('SYST_VEL', self.syst_vel, 'systemic velocity in km/s'), end=True)
