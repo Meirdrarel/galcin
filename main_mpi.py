@@ -54,7 +54,6 @@ def main_mpi(parser, comm, rank, size):
     evel_file = tools.search_file(args.path, args.fits_evel)
     errvel = Image(evel_file)
 
-
     if args.psf:
         psf_file = tools.search_file(args.path, args.psf)
         img_psf = fits.getdata(psf_file)
@@ -91,7 +90,11 @@ if __name__ == '__main__':
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
-    parser = argparse.ArgumentParser(description="Fit program for velocity field of galaxies \ndeveloped on python 3.6 \ncompatible with mpi4py \n\n@uthor:",
+    parser = argparse.ArgumentParser(description="\t(name not found) fit model to velocity field of galaxies. "
+                                                 "\n\tmpi compatible version"
+                                                 "\n\tFor more information see the help or refer to the git repository:"
+                                                 "\n\thttps://github.com/Meirdrarel/batman"
+                                                 "\n\tdeveloped on python 3.6 \n\t@uthor: Jérémy Dumoulin",
                                      formatter_class=argparse.RawTextHelpFormatter)
     main_mpi(parser, comm, rank, size)
 

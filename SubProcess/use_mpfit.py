@@ -14,26 +14,36 @@ import Tools.cap_mpfit as mpfit
 
 def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slope=0, quiet=1, whd='', incfix = False, xfix=False, yfix=False):
     """
-    
-    :param PSF psf: 
-    :param Image flux_ld: 
-    :param Image flux_hd: 
-    :param Image vel: 
-    :param Image errvel: 
-    :param Union[ndarray, Iterable] params: 
-    :param model_name: 
-    :param float slope: 
-    :param int quiet: 
-    :return: 
-    """
 
+    This function define parameters and constraints for mpfit before to procede at the analysis. Write fits files of the best model and the difference with
+    data.
+
+    :param PSF psf:
+    :param Image flux_ld:
+    :param Image flux_hd:
+    :param Image vel:
+    :param Image errvel:
+    :param ndarray params:
+    :param func model_name:
+    :param string path:
+    :param float slope:
+    :param Bool quiet:
+    :param string whd:
+    :param Bool incfix:
+    :param Bool xfix:
+    :param Bool yfix:
+    """
     gal, xcen, ycen, pos_angl, incl, syst_vel, vmax, charac_rad, sig0, fwhm, psfz, smooth = params
 
     model = Model2D(flux_ld, flux_hd, sig0, slope=slope)
     model.set_parameters(xcen, ycen, pos_angl, incl, syst_vel, vmax, charac_rad, flux_hd)
 
     def func_fit(p, fjac=None, data=None, err=None, vel_model=None, psf=None, flux_ld=None, flux_hd=None):
+        """
+        Function minimized by mpfit.
 
+        Return (data-model)^2/err^2
+        """
         xcen = p[0]
         ycen = p[1]
         pos_angl = p[2]
@@ -95,6 +105,7 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
     t2 = time.time()
     print(' fit done in: {:6.2f} s\n'.format(t2-t1))
 
+    # Print results on screen
     print(' fit status:', model_fit.status)
     print(' Chi2R: {} DOF: {}'.format(model_fit.fnorm/model_fit.dof, model_fit.dof,))
 
@@ -107,6 +118,7 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
           '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model_fit.perror, width=12, prec=6))
     print('', '-' * 81)
 
+    # Write fits file
     dirname = 'mpfit'
     if incfix or xfix or yfix:
         dirname += '_'

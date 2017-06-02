@@ -16,17 +16,24 @@ import matplotlib.pyplot as plt
 def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path, rank=0, slope=0, quiet=False,
                     whd='', incfix=False, xfix=False, yfix=False, nbp=19000):
     """
+    This function define parameters and constraints for pymultinest before to procede at the analysis. Write fits files of the best model and the difference
+    with
+    data.
 
     :param PSF psf: 
     :param Image flux_ld: 
     :param Image flux_hd: 
     :param Image vel: 
     :param Image errvel: 
-    :param Union[ndarray, Iterable] params: 
-    :param vel_model: 
+    :param ndarray params:
+    :param func vel_model:
     :param float slope: 
     :param int quiet: 
-    :return: 
+    :param string whd:
+    :param bool incfix:
+    :param bool xfix:
+    :param bool yfix:
+    :param int nbp:
     """
 
     gal, xcen, ycen, pos_angl, incl, syst_vel, vmax, charac_rad, sig0, fwhm, psfz, smooth = params
