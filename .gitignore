@@ -8,6 +8,5 @@ __pycache__
 /SubProcess/test.py
 /fit.sh
 /SubProcess/auto_cube.sh
-/Tools/flux_model.py
 /Class/Model3D.py
 /SubProcess/create_cube.py
