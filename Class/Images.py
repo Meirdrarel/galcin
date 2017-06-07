@@ -7,7 +7,8 @@ import Tools.tools as tools
 class Image:
     def __init__(self, filename, mask=True):
         """
-        
+        Stock fits file and determine all parameters like size etc ...
+
         :param string filename: path+name of the file
         """
         self.data_rebin = None
@@ -20,6 +21,7 @@ class Image:
             self.size = np.array(np.shape(self.data))
             self.len = self.length*self.high
             self.oversample = 1
+            # The mask has been defined arbitrary
             self.mask = self.data >= 0.1
 
         # Add for create model without images
@@ -31,6 +33,7 @@ class Image:
             self.length = self.size[1]
             self.len = self.length*self.high
             self.oversample = 1
+            # The mask has been defined arbitrary
             self.mask = self.data >= 0.1
 
     def conv_inter_flux(self, psf):
@@ -39,6 +42,14 @@ class Image:
 
 class ImageOverSamp(Image):
     def __init__(self, filename, charac_rad, oversamp=None):
+        """
+        Daughter of Image, when fits file is imported, this class calculate the interpolation (meaning only of flux). The oversample parameter is determine from
+        the characteristic radius (over = ceil(8 / charac_rad)) or can by forced by the keyword oversamp.
+
+        :param strin filename:
+        :param float charac_rad:
+        :param int oversamp:
+        """
         Image.__init__(self, filename)
 
         if oversamp:

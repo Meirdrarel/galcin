@@ -37,6 +37,7 @@ def main_mpi(parser, comm, rank, size):
     flux_ld_file = tools.search_file(args.path, args.fits_ld)
     flux_ld = Image(flux_ld_file)
 
+    # If no high resolution image are given, we perform an interpolation of the flux distribution to an higher resolution
     if args.fits_hd:
         flux_hd_file = tools.search_file(args.path, args.fits_hd)
         flux_hd = Image(flux_hd_file)

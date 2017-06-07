@@ -2,9 +2,14 @@
 
 (name) fit velocity model from velocity field of galaxy seen with MUSE. 
 
+## Model
 
-There is two methods implemented
--
+For compute the model, we use the the method from :
+<a href="Epinat, B., Amram, P., Balkowski, C., & Marcelin, M. 2010, MNRAS, 401, 2113">
+http://adsabs.harvard.edu/abs/2010MNRAS.401.2113E
+
+## There is two methods implemented
+
 - MPFIT:
  Which uses the Levenberg-Marquardt technique to solve the
  least-squares problem.  In its typical use, MPFIT will be used to
@@ -17,9 +22,9 @@ There is two methods implemented
 
 
 
-Compatible with MPI4PY
--
-For more information ans how to install it, refer to its site :
+## Compatible with MPI4PY
+
+For more information and how to install it, refer to its site :
 http://pythonhosted.org/mpi4py/
 
 To execute the program with mpi4py:

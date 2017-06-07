@@ -6,13 +6,18 @@ from Class.Images import Image
 
 class PSF:
 
-    def __init__(self, flux_hd, img_psf=None, fwhm_ld=3.5, smooth=0, rank=0):
+    def __init__(self, flux_hd, img_psf=None, fwhm_ld=3.5, smooth=0):
         """
-        If psf image isn't given, a gaussian is used
+        Create a 2D gaussian as PSF, store all the information about the psf.
+
+        Perform the convolution af an image with the psf stored by the method 'convolution'.
+        You can initiate this class with a fits file of a PSF, in this case no gaussian will be created.
+
+        To avoid (at least minimize) any border effect, class PSF need information about the size of the biggest image passed by a Image's class.
 
         :param Image flux_hd:
-        :param ndarray img_psf: image of the psf
-        :param float fwhm: fwhm of a gaussian, default is 3 pixels
+        :param ndarray img_psf: image of the PSF
+        :param float fwhm: fwhm of a gaussian, default is 3.5 pixels
         """
 
         self.psf = img_psf
