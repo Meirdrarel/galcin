@@ -25,7 +25,8 @@ def main(parser):
     parser.add_argument('-incl', default=45, type=float, help='inclination of th galactic plane')
     parser.add_argument('-vs', default=0, type=float, help='systemic velocity')
     parser.add_argument('-vmax', default=200, type=float, help='characteristic velocity of the model')
-    parser.add_argument('-rd', default=4, type=float, help='characteristic radius of the velocity model')
+    parser.add_argument('-rdv', default=4, type=float, help='characteristic radius of the velocity model')
+    parser.add_argument('-rdf', default=6, type=float, help='characteristic radius of the flux model')
     parser.add_argument('-sig0', default=40, type=float, help='velocity dispersion')
     parser.add_argument('-fwhm', default=3.5, type=float, help='fwhm of a gaussian psf')
     parser.add_argument('-smooth', default=0, type=float, help='fwhm for smooth images')
@@ -33,7 +34,7 @@ def main(parser):
     parser.add_argument('-osamp', default=5, type=int, help='oversampling to compute high definition')
     parser.add_argument('-center', nargs='+', default=(15, 15), type=float, help='center of the galaxy')
     parser.add_argument('-size', default=(30, 30), type=int, help='size of images in low resolution')
-    parser.add_argument('-prefix', type=str, help='prefix ass to filename')
+    parser.add_argument('-prefix', type=str, help='prefix add to filename')
     parser.add_argument('-suffix', type=str, help='suffix add to filename')
     args = parser.parse_args()
 
@@ -42,7 +43,8 @@ def main(parser):
 
     center_bright = 2000
     # oversampling paramters#
-    charac_rad = args.rd * args.osamp
+    rdv = args.rdv * args.osamp
+    rdf = args.rdf * args.osamp
     fwhm = args.fwhm * args.osamp
     smooth = args.smooth * args.osamp
     new_xcen = (args.center[0]+0.5)*args.osamp-0.5
@@ -76,14 +78,14 @@ def main(parser):
         return data_conv
 
     # create flux maps
-    flux = fm_list[args.fm](new_xcen, new_ycen, args.pa, args.incl, charac_rad, center_bright, rtrunc, im_size)
+    flux = fm_list[args.fm](new_xcen, new_ycen, args.pa, args.incl, rdf, center_bright, rtrunc, im_size)
     fluxw = np.copy(flux)
 
     flux_rebin = tools.rebin_data(conv_psf(flux, np.sqrt(fwhm**2+args.smooth**2)), args.osamp)
 
     # create velocity maps
     flux_ld = Image(flux_rebin)
-    flux_hd = ImageOverSamp(flux_rebin, charac_rad, oversamp=args.osamp)
+    flux_hd = ImageOverSamp(flux_rebin, rdv, oversamp=args.osamp)
     psf = PSF(flux_hd, fwhm_ld=args.fwhm, smooth=args.smooth)
     flux_hd.conv_inter_flux(psf)
 
@@ -93,7 +95,7 @@ def main(parser):
 
     fluxw[np.where(flux < 0.1)] = 0
     print(' write flux hd')
-    tools.write_fits(new_xcen, new_ycen, args.pa, args.incl, args.vs, args.vmax, charac_rad, 0, psf.convolution(fluxw), args.path +'flux_HD')
+    tools.write_fits(new_xcen, new_ycen, args.pa, args.incl, args.vs, args.vmax, rdv, 0, psf.convolution(fluxw), args.path +'flux_HD')
 
     flux_rebin[np.where(flux_rebin < 0.1)] = 0
     print(' write flux ld')
@@ -101,7 +103,7 @@ def main(parser):
 
     vel_hd = psf.convolution(model.vel_map_hd)
     print(' write vel map hd')
-    tools.write_fits(new_xcen, new_ycen, args.pa, args.incl, args.vs, args.vmax, charac_rad, 0, vel_hd, args.path +'modelV_HD')
+    tools.write_fits(new_xcen, new_ycen, args.pa, args.incl, args.vs, args.vmax, rdv, 0, vel_hd, args.path +'modelV_HD')
 
     print(' write vel map')
     tools.write_fits(args.center[0], args.center[1], args.pa, args.incl, args.vs, args.vm, args.rd, 0, model.vel_map, args.path +'modelV_full')
@@ -114,7 +116,7 @@ def main(parser):
 
     # write ascii file with model parameters
     print(' write parameter file\n')
-    params = np.array([args.center[0], args.center[1], args.pa, args.incl, args.vs, args.vmax, charac_rad/args.osamp, args.sig0, fwhm/args.osamp, smooth,
+    params = np.array([args.center[0], args.center[1], args.pa, args.incl, args.vs, args.vmax, rdv/args.osamp, args.sig0, fwhm/args.osamp, smooth,
                        args.osamp, args.rt])
     names = ['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd', 'sig0', 'fwhm', 'smooth', 'oversample', 'rtrunc']
     formats = {'x': '%10.1f', 'y': '%10.1f', 'pa': '%10.1f', 'incl': '%10.1f', 'vs': '%10.1f', 'vm': '%10.1f', 'rd': '%10.1f', 'sig0': '%10.1f',
@@ -124,13 +126,9 @@ def main(parser):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="\tCreate flux map and velocity map using (main prog name)'s model"
+                                                 "\n\tFor more information see the help or refer to the git repository:"
+                                                 "\n\thttps://github.com/Meirdrarel/batman"
+                                                 "\n\tdeveloped on python 3.6 \n\t@uthor: Jérémy Dumoulin",
+                                     formatter_class=argparse.RawTextHelpFormatter)
     main(parser)
-
-
-
-
-
-
-
-

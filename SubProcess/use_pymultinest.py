@@ -17,8 +17,7 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
                     whd='', incfix=False, xfix=False, yfix=False, nbp=19000):
     """
     This function define parameters and constraints for pymultinest before to procede at the analysis. Write fits files of the best model and the difference
-    with
-    data.
+    with data.
 
     :param PSF psf: 
     :param Image flux_ld: 
@@ -41,6 +40,13 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
     model = Model2D(flux_ld, flux_hd, sig0, slope=slope)
 
     def prior(cube, ndim, nparams):
+        """
+        define the limits where multinest have to explore
+
+        :param ndarray cube: data whith n_params dimension
+        :param int ndim: number of dimension if different of the number of paramerters
+        :param int nparams: number of parameters
+        """
         if xfix:
             cube[0] = cube[0] * 2 - 1 + xcen         # prior between xcen - 1 ans xcen + 1
         else:
@@ -62,7 +68,13 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
         cube[6] = cube[6] * 14 + 1               # charac rad between 1 and 15
 
     def loglike(cube, ndim, nparams):
+        """
+        loglikelihood function which minimized by multinest
 
+        :param ndarray cube: data whith n_params dimension
+        :param int ndim: number of dimension if different of the number of paramerters
+        :param int nparams: number of parameters
+        """
         model.set_parameters(cube[0], cube[1], cube[2], cube[3], cube[4], cube[5], cube[6], flux_hd)
         model.velocity_map(psf, flux_ld, flux_hd, vel_model)
 
@@ -70,6 +82,7 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
 
         return np.sum(chi2)
 
+    # dictionary of paramters for figure and results files
     params = ['xcen', 'ycen', 'pa', 'incl', 'vs', 'vm', 'rd']
     n_params = len(params)
 
@@ -93,11 +106,11 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
                     n_live_points=1000)
 
     if rank == 0:
-
         t2 = time.time()
 
         print('\n fit done in: {:6.2f} s \n'.format(t2-t1))
 
+        # run pymultinest analysis routines
         output = pymultinest.Analyzer(n_params=n_params, outputfiles_basename=path+'/multinest/output'+whd+'_')
         stats = output.get_mode_stats()
 
@@ -135,6 +148,7 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
             if all_stats['marginals'][i]['sigma'] == 0:
                 plot = False
 
+        # plot all parameters probabilities in a pdf file
         if plot:
             parameters = ['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd']
             p = pymultinest.PlotMarginalModes(output)
@@ -148,7 +162,6 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
 
                 for j in range(i):
                     plt.subplot(n_params, n_params, n_params * j + i + 1)
-                    # plt.subplots_adjust(left=0, bottom=0, right=0, top=0, wspace=0, hspace=0)
                     p.plot_conditional(i, j, with_ellipses=False, with_points=True, grid_points=30)
                     plt.xlabel(parameters[i])
                     plt.ylabel(parameters[j])
