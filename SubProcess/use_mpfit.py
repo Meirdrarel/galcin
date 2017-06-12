@@ -53,9 +53,9 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
         charac_rad = p[6]
 
         model.set_parameters(xcen, ycen, pos_angl, incl, syst_vel, vmax, charac_rad, flux_hd)
-        model.velocity_map(psf, flux_ld, flux_hd, vel_model)
+        model.velocity_map(psf, vel, flux_hd, vel_model)
 
-        return [0, np.reshape((data.data[flux_ld.mask]-model.vel_map[flux_ld.mask])/err.data[flux_ld.mask], -1)]
+        return [0, np.reshape((data.data[vel.mask]-model.vel_map[vel.mask])/err.data[vel.mask], -1)]
 
     # PARINFOS
     p0 = [xcen, ycen, pos_angl, incl, syst_vel, vmax, charac_rad]
@@ -138,7 +138,7 @@ def use_mpfit(psf, flux_ld, flux_hd, vel, errvel, params, model_name, path, slop
     tools.write_fits(*model_fit.params, sig0, model.vel_map_hd, path+'/mpfit/modv_hd'+whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
                      oversample=1/flux_hd.oversample),
 
-    model.vel_disp_map(flux_ld, flux_hd, psf)
+    model.vel_disp_map(flux_ld, flux_hd, psf, vel)
     tools.write_fits(*model_fit.params, sig0, model.vel_disp, path + '/mpfit/modd' + whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,
                      mask=flux_ld.mask)
     # tools.write_fits(*model_fit.params, sig0, vel.data - model.vel_map, path + '/mpfit/resd' + whd, chi2r=model_fit.fnorm / model_fit.dof, dof=model_fit.dof,

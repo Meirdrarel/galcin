@@ -76,9 +76,9 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
         :param int nparams: number of parameters
         """
         model.set_parameters(cube[0], cube[1], cube[2], cube[3], cube[4], cube[5], cube[6], flux_hd)
-        model.velocity_map(psf, flux_ld, flux_hd, vel_model)
+        model.velocity_map(psf, vel, flux_hd, vel_model)
 
-        chi2 = -(vel.data[flux_ld.mask] - model.vel_map[flux_ld.mask])**2/(2*errvel.data[flux_ld.mask]**2)
+        chi2 = -(vel.data[vel.mask] - model.vel_map[vel.mask])**2/(2*errvel.data[vel.mask]**2)
 
         return np.sum(chi2)
 
@@ -136,7 +136,7 @@ def use_pymultinest(psf, flux_ld, flux_hd, vel, errvel, params, vel_model, path,
         tools.write_fits(*bestfit, sig0, model.vel_map, path + '/multinest/modv_full' + whd)
         tools.write_fits(*bestfit, sig0, vel.data-model.vel_map, path+'/multinest/resv'+whd, mask=flux_ld.mask)
         tools.write_fits(*bestfit, sig0, model.vel_map_hd, path + '/multinest/modv_hd' + whd, oversample=1 / flux_hd.oversample)
-        model.vel_disp_map(flux_ld, flux_hd, psf)
+        model.vel_disp_map(flux_ld, flux_hd, psf, vel)
         tools.write_fits(*bestfit, sig0, model.vel_disp, path + '/mpfit/modd' + whd, mask=flux_ld.mask)
         ascii.write(np.array([bestfit, stats['modes'][0]['sigma']]), path+'/multinest/params_fit'+whd+'.txt',
                     names=['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd'], format='fixed_width', delimiter=None,

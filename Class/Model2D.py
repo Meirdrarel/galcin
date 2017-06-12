@@ -79,10 +79,10 @@ class Model2D:
 
         return v
 
-    def velocity_map(self, psf, flux_ld, flux_hd, vel_model):
+    def velocity_map(self, psf, vel, flux_hd, vel_model):
         """
         :param PSF psf:
-        :param Image flux_ld:
+        :param Image vel:
         :param Image flux_hd:
         :param function vel_model:
         """
@@ -91,7 +91,7 @@ class Model2D:
 
         vel_times_flux = tools.rebin_data(psf.convolution(flux_hd.data * self.vel_map_hd), flux_hd.oversample)
 
-        self.vel_map[flux_ld.mask] = vel_times_flux[flux_ld.mask] / flux_hd.data_rebin[flux_ld.mask]
+        self.vel_map[vel.mask] = vel_times_flux[vel.mask] / flux_hd.data_rebin[vel.mask]
 
     def linear_velocity_dispersion(self):
         """
@@ -104,7 +104,7 @@ class Model2D:
 
         return sig
 
-    def vel_disp_map(self, flux_ld, flux_hd, psf):
+    def vel_disp_map(self, flux_ld, flux_hd, psf, vel):
         """
 
         :param PSF psf:
@@ -119,11 +119,11 @@ class Model2D:
 
         sig = self.linear_velocity_dispersion()
 
-        term1[flux_ld.mask] = tools.rebin_data(psf.convolution(sig ** 2 * flux_hd.data), flux_hd.oversample)[flux_ld.mask] / flux_hd.data_rebin[flux_ld.mask]
-        term2[flux_ld.mask] = tools.rebin_data(psf.convolution(self.vel_map_hd ** 2 * flux_hd.data), flux_hd.oversample)[flux_ld.mask] \
-                              / flux_hd.data_rebin[flux_ld.mask]
-        term3[flux_ld.mask] = (tools.rebin_data(psf.convolution(self.vel_map_hd * flux_hd.data), flux_hd.oversample)[flux_ld.mask] /
-                               flux_hd.data_rebin[flux_ld.mask]) ** 2
+        term1[vel.mask] = tools.rebin_data(psf.convolution(sig ** 2 * flux_hd.data), flux_hd.oversample)[vel.mask] / flux_hd.data_rebin[vel.mask]
+        term2[vel.mask] = tools.rebin_data(psf.convolution(self.vel_map_hd ** 2 * flux_hd.data), flux_hd.oversample)[vel.mask] \
+                              / flux_hd.data_rebin[vel.mask]
+        term3[vel.mask] = (tools.rebin_data(psf.convolution(self.vel_map_hd * flux_hd.data), flux_hd.oversample)[vel.mask] /
+                               flux_hd.data_rebin[vel.mask]) ** 2
 
         self.vel_disp = np.sqrt(term1 + term2 - term3)
 

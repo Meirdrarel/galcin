@@ -22,7 +22,7 @@ class Image:
             self.len = self.length*self.high
             self.oversample = 1
             # The mask has been defined arbitrary
-            self.mask = self.data >= 0.1
+            self.mask = np.logical_not(np.isnan(self.data))
 
         # Add for create model without images
         if type(filename) is np.ndarray:
@@ -34,7 +34,7 @@ class Image:
             self.len = self.length*self.high
             self.oversample = 1
             # The mask has been defined arbitrary
-            self.mask = self.data >= 0.1
+            self.mask = np.logical_not(np.isnan(self.data))
 
     def conv_inter_flux(self, psf):
         self.data_rebin = tools.rebin_data(psf.convolution(self.data), self.oversample)

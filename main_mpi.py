@@ -95,7 +95,7 @@ if __name__ == '__main__':
                                                  "\n\tmpi compatible version"
                                                  "\n\tFor more information see the help or refer to the git repository:"
                                                  "\n\thttps://github.com/Meirdrarel/batman"
-                                                 "\n\tdeveloped on python 3.6 \n\t@uthor: Jérémy Dumoulin",
+                                                 "\n\tdeveloped on python 3.6",
                                      formatter_class=argparse.RawTextHelpFormatter)
     main_mpi(parser, comm, rank, size)
 

@@ -85,7 +85,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="\t(name not found) fit model to velocity field of galaxies. "
                                                  "\n\tFor more information see the help or refer to the git repository:"
                                                  "\n\thttps://github.com/Meirdrarel/batman"
-                                                 "\n\tdeveloped on python 3.6 \n\t@uthor: Jérémy Dumoulin",
+                                                 "\n\tdeveloped on python 3.6",
                                      formatter_class=argparse.RawTextHelpFormatter)
     main(parser)
 
