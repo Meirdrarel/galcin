@@ -48,12 +48,14 @@ def main(path=None, filename=None, rank=0):
     # Test the size of the flux image with de velocity field and perform an interpolation if is needed
     length_rap = flux.length / vel.get_lenght()
     high_rap = flux.high / vel.get_high()
+    print('length: {} \thigh: {}'.format(length_rap, high_rap))
     if length_rap == 1 or high_rap == 1:
         if length_rap == high_rap:
             flux.set_oversamp(int(np.ceil(8 / params0['rt']['value'])))
             flux.interpolation()
             whd = ''
     else:
+        flux.set_oversamp(int(length_rap))
         whd = '_whd'
 
     # Check psf file existence
@@ -104,7 +106,7 @@ def main(path=None, filename=None, rank=0):
         if files['disp'] is not None:
             tools.write_fits(*results['params'], confmod['sig'], disp.data - model.vel_disp, out_path+'/resd'+whd, mask=vel.mask)
 
-        tools.write_yaml(out_path, results, config['gal name'])
+        tools.write_yaml(out_path, results, config['gal name'], whd=whd)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="\t(name not found) fit model to velocity field of galaxies. "

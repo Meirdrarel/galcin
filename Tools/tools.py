@@ -108,8 +108,8 @@ def make_dir(path, config):
     return path+dirname
 
 
-def write_yaml(path, params, galname):
-    outstream = open(path+'/results.yaml', 'w')
+def write_yaml(path, params, galname, whd):
+    outstream = open(path+'/results'+whd+'.yaml', 'w')
 
     paramstowrite = {'gal name': galname, 'results': ''}
 
