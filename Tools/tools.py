@@ -3,6 +3,7 @@ import numpy as np
 from astropy.io import fits
 import os
 import sys
+import yaml
 
 
 def sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=(240, 240)):
@@ -44,15 +45,14 @@ def rebin_data(data, factor):
     """
     if data.ndim == 2:
         data2 = data.reshape(int(data.shape[0] / factor), factor, int(data.shape[1] / factor), factor)
-        # return np.mean(data2, axis=(1, 3))
         return data2.mean(1).mean(2)
 
     if data.ndim == 3:
         data2 = data.reshape(data.shape[0], int(data.shape[1] / factor), factor, int(data.shape[2] / factor), factor)
-        return np.mean(data2, axis=(2, 4))
+        return data2.mean(2).mean(3)
 
 
-def write_fits(xcen, ycen, pos_angl, incl, syst_vel, vmax, rd, sig0, data, filename, oversample=1, chi2r=None, dof=None, mask=None):
+def write_fits(xcen, ycen, pos_angl, incl, syst_vel, vmax, rd, sig0, data, filename, oversample=1, mask=None):
 
     if mask is not None:
         data[np.logical_not(mask)] = float('nan')
@@ -66,19 +66,68 @@ def write_fits(xcen, ycen, pos_angl, incl, syst_vel, vmax, rd, sig0, data, filen
     hdu.header.append(('MAX_VEL', vmax, 'maximum velocity in km/s'))
     hdu.header.append(('SYST_VEL', syst_vel, 'systemic velocity in km/s'))
     hdu.header.append(('SIG0', sig0, 'dispersion velocity in km/s'))
-    if chi2r:
-        hdu.header.append(('CHI2R', chi2r, 'reduced chi square'))
-        hdu.header.append(('DOF', dof, 'degree of freedom'))
 
     hdulist = fits.HDUList(hdu)
     hdulist.writeto(filename + '.fits', checksum=True, overwrite=True)
 
 
 def search_file(path, filename):
-    while True:
+    try:
         file_list = os.listdir(path)
-        if filename in file_list:
-            return path+filename
-        else:
-            print('File {} not found in directory {}'.format(filename, path))
-            sys.exit()
+        while True:
+            if filename in file_list:
+                if path != '.':
+                    return path+filename
+                else:
+                    return filename
+            else:
+                print('File {} not found in directory {}'.format(filename, path))
+                sys.exit()
+    except FileNotFoundError:
+        print('No such file or directory in {}'.format(path))
+        sys.exit()
+
+
+def make_dir(path, config):
+
+    if path == '.':
+        path = ''
+
+    dirname = config['config fit']['method'] + '_' + config['config fit']['model']
+    if config['config fit']['incfix'] or config['config fit']['xfix'] or config['config fit']['yfix']:
+        dirname += '_'
+    if config['config fit']['xfix']:
+        dirname += 'x'
+    if config['config fit']['yfix']:
+        dirname += 'y'
+    if config['config fit']['incfix']:
+        dirname += 'i'
+    if os.path.isdir(path+dirname) is False:
+        print("\ncreate directory {}".format(dirname))
+        os.makedirs(path+dirname)
+    return path+dirname
+
+
+def write_yaml(path, params, galname):
+    outstream = open(path+'/results.yaml', 'w')
+
+    paramstowrite = {'gal name': galname, 'results': ''}
+
+    truc = {}
+    for key in params['results']:
+        truc.update({key: {'value': float(params['results'][key]['value']), 'error': float(params['results'][key]['error'])}})
+
+    paramstowrite['results'] = truc
+
+    try:
+        paramstowrite.update({'mpfit stats': {'chi2r': float(params['mpfit']['chi2r']), 'dof': float(params['mpfit']['dof'])}})
+    except KeyError:
+        pass
+
+    try:
+        paramstowrite.update({'PymultiNest': {'log likelihood': params['PyMultiNest']['log likelihood']}})
+    except KeyError:
+        pass
+
+    yaml.dump(paramstowrite, outstream, default_flow_style=False)
+    outstream.close()

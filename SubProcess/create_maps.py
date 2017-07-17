@@ -100,7 +100,7 @@ def main(parser):
 
     # flux_rebin[np.where(flux_rebin < 0.1)] = 0
     print(' write flux ld')
-    tools.write_fits(*args.center, args.pa, args.incl, args.vs, args.vm, args.rdv, 0, flux_rebin, args.path +'flux')
+    tools.write_fits(*args.center, args.pa, args.incl, args.vs, args.vmax, args.rdv, 0, flux_rebin, args.path +'flux')
 
     vel_hd = psf.convolution(model.vel_map_hd)
     print(' write vel map hd')

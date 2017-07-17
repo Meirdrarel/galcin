@@ -6,8 +6,8 @@ def exponential_velocity(r, rt, vmax):
     """
     Velocity function for an exponential disk
 
-    :param Union[ndarray, Iterable] r: 2D array which contain the radius
-    :param int rt: radius at which the maximum velocity is reached (arcsec)
+    :param ndarray r: 2D array which contain the radius
+    :param int rt: radius at which the maximum velocity is reached
     :param float vmax: Maximum velocity of the model
     """
 
@@ -24,8 +24,8 @@ def flat_velocity(r, rt, vmax):
     """
     Velocity function for flat disk
 
-    :param Union[ndarray, Iterable] r: 2D array which contain the radius
-    :param int rt: radius at which the maximum velocity is reached (arcsec)
+    :param ndarray r: 2D array which contain the radius
+    :param int rt: radius at which the maximum velocity is reached
     :param float vmax: maximum velocity of the model
     """
 
@@ -48,3 +48,5 @@ def arctan_velocity(r, rt, vmax):
 
     return 2*vmax/np.pi*np.arctan(2*r/rt)
 
+# Must be at th end of the file
+list_model = {'exp': exponential_velocity, 'flat': flat_velocity, 'arctan': arctan_velocity}

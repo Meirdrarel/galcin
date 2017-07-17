@@ -3,45 +3,51 @@ import numpy as np
 import Tools.tools as tools
 from Class.PSF import PSF
 from Class.Images import Image
-import matplotlib.pyplot as plt
 
 
 class Model2D:
-    """Model in 2D of the velocity filed of a galaxy
+    """Model in 2D of the velocity field of a galaxy
 
         Compute the velocity field and the dispersion of a model using observed data in input.
 
         :Example:
 
-        $ model = Model2D(flux_ld, flux_hd, init_disp)
-        $ model.set_parameters(xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad, flux_hd)
-        $ model.velocity_map(psf, flux_ld, flux_hd, vel_model
 
         Parameters:
+            :param Image vel:
+            :param Image errvel:
+            :param Image flux:
+            :param PSF psf:
+            :param func vel_model: velocity function used to create the model
             :param float sig0: velocity dispersion of the model
             :param float slope: slope of the velocity dispersion
-            :param Image flux_ld: object which represent the flux in "low resolution" of the observed galaxy
-            :param Image flux_hd: object which represent the flux in "high resolution" of the observed galaxy
         """
-    def __init__(self, flux_ld, flux_hd, sig0, slope=0.):
+    def __init__(self, vel, errvel, flux, psf, vel_model, sig0, slope=0.):
 
+        # None parameters
         self.model_pos_angl = None
         self.model_incl = None
         self.model_xcen = None
         self.model_ycen = None
         self.model_vmax = None
         self.model_syst_vel = None
-        self.model_sig0 = sig0
-        self.model_slope = slope
         self.model_charac_rad = None
         self.model_radius = None
         self.model_theta = None
-        self.model_size = None
-        self.vel_map = np.zeros(flux_ld.size)
-        self.vel_map_hd = np.zeros(flux_hd.size)
-        self.vel_disp = None
 
-    def set_parameters(self, xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad, flux_hd):
+        # Parameters which must must be initialized
+        self.vel_model = vel_model
+        self.model_sig0 = sig0
+        self.model_slope = slope
+        self.vel_map = np.zeros(vel.get_size())
+        self.vel_disp = np.zeros(vel.get_size())
+        self.vel_map_hd = np.zeros(np.array(flux.get_size()))
+        self.vel = vel
+        self.errvel = errvel
+        self.flux = flux
+        self.psf = psf
+
+    def set_parameters(self, xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad):
         """
 
         :param float xcen: abscissa of the center in pixel
@@ -51,47 +57,50 @@ class Model2D:
         :param float syst_vel: systemic velocity in km/s
         :param float max_vel: maximum rotation velocity in km/s
         :param float charac_rad: characteristic radius, where the maximum velocity is reached
-        :param Image flux_hd:
         """
 
         self.model_pos_angl = pos_angl
         self.model_incl = incl
-        self.model_xcen = (xcen + 0.5) * flux_hd.oversample - 0.5
-        self.model_ycen = (ycen + 0.5) * flux_hd.oversample - 0.5
+        self.model_xcen = (xcen + 0.5) * self.flux.get_oversamp() - 0.5
+        self.model_ycen = (ycen + 0.5) * self.flux.get_oversamp() - 0.5
         self.model_vmax = max_vel
         self.model_syst_vel = syst_vel
-        self.model_charac_rad = charac_rad*flux_hd.oversample
-        self.model_size = np.array(flux_hd.size)
+        self.model_charac_rad = charac_rad*self.flux.get_oversamp()
         self.model_radius, self.model_theta = tools.sky_coord_to_galactic(self.model_xcen, self.model_ycen, self.model_pos_angl, self.model_incl,
-                                                                          im_size=self.model_size)
+                                                                          im_size=np.shape(self.vel_map_hd))
 
-    def disk_velocity(self, vel_model):
+    def get_parameter(self):
+        """
+            Get the actual parameters of the model (in low resolution scale)
+        """
+        return [(self.model_xcen + 0.5) * self.flux.get_oversamp() - 0.5, (self.model_ycen + 0.5) * self.flux.get_oversamp() - 0.5,
+                self.model_pos_angl, self.model_incl, self.model_syst_vel, self.model_vmax, self.model_charac_rad/self.flux.get_oversamp()]
+
+    def disk_velocity(self):
+        """
+            Compute the velocity field
         """
 
-        :param vel_model:
-        :return ndarray:
-        """
-
-        vr = vel_model(self.model_radius, self.model_charac_rad, self.model_vmax)
+        vr = self.vel_model(self.model_radius, self.model_charac_rad, self.model_vmax)
 
         # Calculation of the velocity field
         v = vr * math.sin(math.radians(self.model_incl)) * self.model_theta + self.model_syst_vel
 
         return v
 
-    def velocity_map(self, psf, vel, flux_hd, vel_model):
+    def velocity_map(self):
         """
+
         :param PSF psf:
         :param Image vel:
-        :param Image flux_hd:
-        :param function vel_model:
+        :param Image flux_hr:
         """
 
-        self.vel_map_hd = self.disk_velocity(vel_model)
+        self.vel_map_hd = self.disk_velocity()
 
-        vel_times_flux = tools.rebin_data(psf.convolution(flux_hd.data * self.vel_map_hd), flux_hd.oversample)
+        vel_times_flux = tools.rebin_data(self.psf.convolution(self.flux.data * self.vel_map_hd), self.flux.get_oversamp())
 
-        self.vel_map[vel.mask] = vel_times_flux[vel.mask] / flux_hd.data_rebin[vel.mask]
+        self.vel_map[self.vel.mask] = vel_times_flux[self.vel.mask] / self.flux.data_rebin[self.vel.mask]
 
     def linear_velocity_dispersion(self):
         """
@@ -104,33 +113,60 @@ class Model2D:
 
         return sig
 
-    def vel_disp_map(self, flux_ld, flux_hd, psf, vel):
+    def vel_disp_map(self):
         """
 
         :param PSF psf:
-        :param Image flux_ld:
-        :param Image flux_hd:
+        :param Image flux_lr:
+        :param Image flux_hr:
         :return ndarray:
         """
 
-        term1 = np.zeros(flux_ld.size)
-        term2 = np.zeros(flux_ld.size)
-        term3 = np.zeros(flux_ld.size)
+        term1 = np.zeros(self.vel.size)
+        term2 = np.zeros(self.vel.size)
+        term3 = np.zeros(self.vel.size)
 
         sig = self.linear_velocity_dispersion()
 
-        term1[vel.mask] = tools.rebin_data(psf.convolution(sig ** 2 * flux_hd.data), flux_hd.oversample)[vel.mask] / flux_hd.data_rebin[vel.mask]
-        term2[vel.mask] = tools.rebin_data(psf.convolution(self.vel_map_hd ** 2 * flux_hd.data), flux_hd.oversample)[vel.mask] \
-                              / flux_hd.data_rebin[vel.mask]
-        term3[vel.mask] = (tools.rebin_data(psf.convolution(self.vel_map_hd * flux_hd.data), flux_hd.oversample)[vel.mask] /
-                               flux_hd.data_rebin[vel.mask]) ** 2
+        term1[self.vel.mask] = tools.rebin_data(self.psf.convolution(sig ** 2 * self.flux.data), self.flux.oversample)[self.vel.mask] \
+                               / self.flux.data_rebin[self.vel.mask]
+        term2[self.vel.mask] = tools.rebin_data(self.psf.convolution(self.vel_map_hd ** 2 * self.flux.data), self.flux.oversample)[self.vel.mask] \
+                              / self.flux.data_rebin[self.vel.mask]
+        term3[self.vel.mask] = (tools.rebin_data(self.psf.convolution(self.vel_map_hd * self.flux.data), self.flux.oversample)[self.vel.mask] /
+                            self.flux.data_rebin[self.vel.mask]) ** 2
 
         self.vel_disp = np.sqrt(term1 + term2 - term3)
 
-    def get_parameter(self, flux_hd):
+    def least_square(self, p, fjac=None):
         """
-        
-        :param Image flux_hd:
+        Function minimized by mpfit.
+
+        Return (data-model)^2/err^2
         """
-        return [self.model_xcen/flux_hd.oversample, self.model_ycen/flux_hd.oversample, self.model_pos_angl, self.model_incl, self.model_syst_vel,
-                self.model_vmax, self.model_charac_rad/flux_hd.oversample]
+        xcen = p[0]
+        ycen = p[1]
+        pos_angl = p[2]
+        incl = p[3]
+        syst_vel = p[4]
+        vmax = p[5]
+        charac_rad = p[6]
+
+        self.set_parameters(xcen, ycen, pos_angl, incl, syst_vel, vmax, charac_rad)
+        self.velocity_map()
+
+        return [0, np.reshape((self.vel.data[self.vel.mask]-self.vel_map[self.vel.mask])/self.errvel.data[self.vel.mask], -1)]
+
+    def log_likelihood(self, cube, ndim, nparams):
+        """
+        log likelihood function which maximized by multinest
+
+        :param ndarray cube: data whith n_params dimension
+        :param int ndim: number of dimension if different of the number of paramerters
+        :param int nparams: number of parameters
+        """
+        self.set_parameters(cube[0], cube[1], cube[2], cube[3], cube[4], cube[5], cube[6])
+        self.velocity_map()
+
+        chi2 = -(self.vel_map[self.vel.mask] - self.vel.data[self.vel.mask])**2/(2*self.errvel.data[self.vel.mask]**2)
+
+        return np.sum(chi2)
