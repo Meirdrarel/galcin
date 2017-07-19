@@ -12,19 +12,25 @@ import matplotlib.pyplot as plt
 def use_pymultinest(model, params, quiet=True, nbp=0, pltstats=False, rank=0, path=None, whd=None):
     """
 
-    :param Model2D model:
-    :param dict params:
-    :param int quiet: 
-    :param string whd:
-    :param int nbp:
+        Function which define the parameters's space, call PyMultiNest and perform the analysis of the results
+
+    :param Model2D model: model initialized
+    :param dict params: dictionary which contain all parameters with the limits and if are fixed or not
+    :param bool quiet: print or not verbose from the fit method
+    :param int nbp: number of points calculated by MultiNest, set to 0 for unlimited
+    :param bool pltstats: create a pdf file with plots of probabilities of parameters
+    :param int rank: the rank of the thread (needed whe you use MPI4PY with more than 1 core)
+    :param str path: the relative of the directory where PyMultiNest can write files needed for the further analysis
+    :param string whd: suffix for filename if a high resolution map is used
     """
 
     def prior(cube, ndim, nparams):
         """
-        define the limits where multinest have to explore
+
+            Define the limits of the parameters' space where multinest have to explore
 
         :param ndarray cube: data whith n_params dimension
-        :param int ndim: number of dimension if different of the number of paramerters
+        :param int ndim: number of dimension if different of the number of parameters
         :param int nparams: number of parameters
         """
         if nparams == 7:
@@ -35,9 +41,11 @@ def use_pymultinest(model, params, quiet=True, nbp=0, pltstats=False, rank=0, pa
     if rank == 0:
         t1 = time.time()
 
+    # ### Call PyMultiNest
     pymultinest.run(model.log_likelihood, prior, len(params['parname']), outputfiles_basename=path+'/res'+whd+'_', resume=False, verbose=quiet, max_iter=nbp,
                     n_live_points=50, sampling_efficiency=0.8, evidence_tolerance=0.5, n_iter_before_update=100, null_log_evidence=-1e90,
                     max_modes=100, mode_tolerance=-1e60)
+    # ###
 
     if rank == 0:
         t2 = time.time()
@@ -78,4 +86,3 @@ def use_pymultinest(model, params, quiet=True, nbp=0, pltstats=False, rank=0, pa
         return {'results': {params['parname'][i]: {'value': bestfit['parameters'][i],
                                                    'error': stats['modes'][0]['sigma'][i]} for i in range(len(params['parname']))},
                 'PyMultiNest': {'log likelihood': bestfit['log_likelihood']}}
-

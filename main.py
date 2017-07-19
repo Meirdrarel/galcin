@@ -2,15 +2,16 @@
 import argparse
 import os
 import sys
-from astropy.io import ascii, fits
+
 import numpy as np
 import yaml
+from astropy.io import fits
 
+import Models.velocity_model as vm
 import Tools.tools as tools
-import Tools.velocity_model as vm
 from Class.Images import Image
-from Class.PSF import PSF
 from Class.Model2D import Model2D
+from Class.PSF import PSF
 from SubProcess.use_mpfit import use_mpfit
 from SubProcess.use_pymultinest import use_pymultinest
 
@@ -95,13 +96,13 @@ def main(path=None, filename=None, rank=0):
         model.velocity_map()
         model.vel_disp_map()
 
-        tools.write_fits(*best_param, confmod['sig'], model.vel_map, out_path+'/modv'+whd, mask=vel.mask)
+        tools.write_fits(model.vel_map, out_path+'/modv'+whd, config, results, mask=vel.mask)
 
-        tools.write_fits(*best_param, confmod['sig'], vel.data-model.vel_map, out_path+'/resv'+whd, mask=vel.mask)
+        tools.write_fits(vel.data-model.vel_map, out_path+'/resv'+whd, config, results, mask=vel.mask)
 
-        tools.write_fits(*best_param, confmod['sig'], model.vel_map_hd, out_path+'/modv_hd'+whd, oversample=1/flux.oversample)
+        tools.write_fits(model.vel_map_hd, out_path+'/modv_hd'+whd, config, results)
 
-        tools.write_fits(*best_param, confmod['sig'], model.vel_disp, out_path+'/modd'+whd, mask=vel.mask)
+        tools.write_fits(model.vel_disp, out_path+'/modd'+whd, config, results, mask=vel.mask)
 
         if files['disp'] is not None:
             tools.write_fits(*results['params'], confmod['sig'], disp.data - model.vel_disp, out_path+'/resd'+whd, mask=vel.mask)

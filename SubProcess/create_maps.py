@@ -1,20 +1,20 @@
 #!/usr/bin/env python
-import sys
 import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname('../Models/'), '..')))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname('../Class/'), '..')))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname('../Tools/'), '..')))
 import numpy as np
 from numpy.fft import fftshift, fft2, ifft2
 import math
-import Tools.velocity_model as vm
-import Tools.flux_model as fm
+import Models.velocity_model as vm
+import Models.flux_model as fm
 import Tools.tools as tools
-from Class.Images import Image, ImageOverSamp
+from Class.Images import Image
 from Class.PSF import PSF
 from Class.Model2D import Model2D
 import argparse
 from astropy.io import ascii
-import matplotlib.pyplot as plt
 
 
 def main(parser):

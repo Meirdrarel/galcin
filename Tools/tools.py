@@ -8,7 +8,7 @@ import yaml
 
 def sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=(240, 240)):
     """
-    Convert position from Sky coordinates to Galactic coordinates
+        Convert position from Sky coordinates to Galactic coordinates
 
     :param float xcen: position of the center in arcsec
     :param float ycen: position of the center in arcsec
@@ -36,7 +36,7 @@ def sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=(240, 240)):
 
 def rebin_data(data, factor):
     """
-    Rebin an image.
+        Rebin an image.
 
     example: For rebin an image from 240x240 to 60x60 pixels, factor=5
 
@@ -52,56 +52,71 @@ def rebin_data(data, factor):
         return data2.mean(2).mean(3)
 
 
-def write_fits(xcen, ycen, pos_angl, incl, syst_vel, vmax, rd, sig0, data, filename, oversample=1, mask=None):
+def write_fits(data, filename, config, results, mask=None):
+    """
+        write data in fits file with model's parameters
 
+    :param ndarray data: data to write in fits file
+    :param str filename: name of the fits file (with path)
+    :param dict config: config file
+    :param disct results: dictionary of the results
+    :param ndarray[bool] mask: boolean mask
+    :return:
+    """
     if mask is not None:
         data[np.logical_not(mask)] = float('nan')
 
     hdu = fits.PrimaryHDU(data=data)
-    hdu.header.append(('PA', pos_angl, 'position angle in degree'))
-    hdu.header.append(('INCL', incl, 'inclination in degree'))
-    hdu.header.append(('XCEN', xcen / oversample, 'center abscissa in pixel'))
-    hdu.header.append(('YCEN', ycen / oversample, 'center ordinate in pixel'))
-    hdu.header.append(('RD', rd / oversample, 'characteristic radius in pixel'))
-    hdu.header.append(('MAX_VEL', vmax, 'maximum velocity in km/s'))
-    hdu.header.append(('SYST_VEL', syst_vel, 'systemic velocity in km/s'))
-    hdu.header.append(('SIG0', sig0, 'dispersion velocity in km/s'))
+    for key in config['init fit']['parname']:
+        hdu.header.append((key, results['results'][key]['value'], config['init fit'][key]['desc']))
 
     hdulist = fits.HDUList(hdu)
     hdulist.writeto(filename + '.fits', checksum=True, overwrite=True)
 
 
 def search_file(path, filename):
+    """
+        Search a file in a directory and all its subdirectories. Return the path of the file
+
+    :param str path: path where to search
+    :param str filename: name of the file to search (with its extension)
+    :return str: the relative path where the file is
+    """
     try:
-        file_list = os.listdir(path)
-        while True:
-            if filename in file_list:
+        for root, dirs, files in os.walk(path):
+            if filename in files:
                 if path != '.':
-                    return path+filename
-                else:
+                    print('{} found in {}'.format(filename, root))
                     return filename
-            else:
-                print('File {} not found in directory {}'.format(filename, path))
-                sys.exit()
+                else:
+                    print('{} found in {}'.format(filename, root))
+                    return root+'/'+filename
+        print("File {} not found in directory {} and its subdirectories".format(filename, path))
+        sys.exit()
     except FileNotFoundError:
-        print('No such file or directory in {}'.format(path))
+        print('No such file or directory {}'.format(path))
         sys.exit()
 
 
 def make_dir(path, config):
+    """
+        Create the directory where results will be written
+        The name of the directory depend of the parameters fixed
+
+    :param path: path where fits files are
+    :param dict config: YAML config dictionary
+    :return str: the path
+    """
 
     if path == '.':
         path = ''
 
     dirname = config['config fit']['method'] + '_' + config['config fit']['model']
-    if config['config fit']['incfix'] or config['config fit']['xfix'] or config['config fit']['yfix']:
-        dirname += '_'
-    if config['config fit']['xfix']:
-        dirname += 'x'
-    if config['config fit']['yfix']:
-        dirname += 'y'
-    if config['config fit']['incfix']:
-        dirname += 'i'
+
+    for key in config['init fit']['parname']:
+        if config['init fit'][key]['fixed'] == 1:
+            dirname += key[0]
+
     if os.path.isdir(path+dirname) is False:
         print("\ncreate directory {}".format(dirname))
         os.makedirs(path+dirname)
@@ -109,25 +124,35 @@ def make_dir(path, config):
 
 
 def write_yaml(path, params, galname, whd):
+    """
+
+        Setup the stream and write the YAML file which contain the results
+
+    :param str path: path where to write the YAML file
+    :param dict params: dictionary of the bestfit parameters
+    :param str galname: the name of the galaxy
+    :param str whd: suffix when a high resolution map is used
+    :return:
+    """
+
     outstream = open(path+'/results'+whd+'.yaml', 'w')
 
-    paramstowrite = {'gal name': galname, 'results': ''}
+    dictowrite = {'gal name': galname, 'results': ''}
 
-    truc = {}
+    sub_dict = {}
     for key in params['results']:
-        truc.update({key: {'value': float(params['results'][key]['value']), 'error': float(params['results'][key]['error'])}})
+        sub_dict.update({key: {'value': float(params['results'][key]['value']), 'error': float(params['results'][key]['error'])}})
 
-    paramstowrite['results'] = truc
+    dictowrite['results'] = sub_dict
 
     try:
-        paramstowrite.update({'mpfit stats': {'chi2r': float(params['mpfit']['chi2r']), 'dof': float(params['mpfit']['dof'])}})
+        dictowrite.update({'mpfit stats': {'chi2r': float(params['mpfit']['chi2r']), 'dof': float(params['mpfit']['dof'])}})
+    except KeyError:
+        pass
+    try:
+        dictowrite.update({'PymultiNest': {'log likelihood': params['PyMultiNest']['log likelihood']}})
     except KeyError:
         pass
 
-    try:
-        paramstowrite.update({'PymultiNest': {'log likelihood': params['PyMultiNest']['log likelihood']}})
-    except KeyError:
-        pass
-
-    yaml.dump(paramstowrite, outstream, default_flow_style=False)
+    yaml.dump(dictowrite, outstream, default_flow_style=False)
     outstream.close()

@@ -8,10 +8,11 @@ import Tools.cap_mpfit as mpfit
 
 def use_mpfit(model, params, quiet=False):
     """
+        Function call MPFIt to perform the fit of the model
 
-    :param Model2D model:
-    :param dict params:
-    :param Bool quiet:
+    :param Model2D model: model initialised
+    :param dict params: dictionary which contain all parameters with the limits and if are fixed or not
+    :param Bool quiet: print or not verbose from the fit method
     """
 
     if quiet is True:
@@ -19,14 +20,13 @@ def use_mpfit(model, params, quiet=False):
     else:
         verbose = 1
 
-    # PARINFOS
+    # create the array of dictionary 'parinfo' needed by mpfit
     p0 = [params[key] for key in params['parname']]
-    parinfo = [{'value': 0., 'fixed': 0, 'limited': [0, 0], 'limits': [0., 0.], 'parname': 0., 'step': 0.} for i in range(len(p0))]
+    parinfo = [{'value': 0., 'fixed': 0, 'limited': [1, 1], 'limits': [0., 0.], 'parname': 0., 'step': 0.} for i in range(len(p0))]
 
     for i in range(len(p0)):
         parinfo[i]['value'] = p0[i]['value']
         parinfo[i]['parname'] = params['parname'][i]
-        parinfo[i]['limited'] = [1, 1]
         parinfo[i]['limits'] = params[params['parname'][i]]['limits']
         if params[params['parname'][i]]['fixed'] is None:
             params[params['parname'][i]]['fixed'] = 0
@@ -36,7 +36,9 @@ def use_mpfit(model, params, quiet=False):
     print('\n start fit with mpfit')
     t1 = time.time()
 
+    # ###  Call mpfit
     model_fit = mpfit.mpfit(model.least_square, parinfo=parinfo, autoderivative=1, gtol=1e-10, ftol=1e-10, xtol=1e-10, quiet=verbose)
+    # ###
 
     t2 = time.time()
     print(' fit done in: {:6.2f} s\n'.format(t2-t1))

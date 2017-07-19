@@ -6,18 +6,16 @@ from Class.Images import Image
 
 
 class Model2D:
-    """Model in 2D of the velocity field of a galaxy
-
+    """
+        Model in 2D of the velocity field of a galaxy
         Compute the velocity field and the dispersion of a model using observed data in input.
-
-        :Example:
-
+        This model can be used only with rotational curves with 3 parameters like which in 'velocity_model.py'
 
         Parameters:
-            :param Image vel:
-            :param Image errvel:
-            :param Image flux:
-            :param PSF psf:
+            :param Image vel: represent the velocity field to fit
+            :param Image errvel: the error map of the velocity (vel)
+            :param Image flux: flux distribution at the same or in high resolution than the velocity
+            :param PSF psf: the class of the psf
             :param func vel_model: velocity function used to create the model
             :param float sig0: velocity dispersion of the model
             :param float slope: slope of the velocity dispersion
@@ -49,6 +47,7 @@ class Model2D:
 
     def set_parameters(self, xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad):
         """
+            set the value of the model parameters
 
         :param float xcen: abscissa of the center in pixel
         :param float ycen: ordinate of the center in pixel
@@ -72,6 +71,8 @@ class Model2D:
     def get_parameter(self):
         """
             Get the actual parameters of the model (in low resolution scale)
+
+        :return ndarray:
         """
         return [(self.model_xcen + 0.5) * self.flux.get_oversamp() - 0.5, (self.model_ycen + 0.5) * self.flux.get_oversamp() - 0.5,
                 self.model_pos_angl, self.model_incl, self.model_syst_vel, self.model_vmax, self.model_charac_rad/self.flux.get_oversamp()]
@@ -79,6 +80,8 @@ class Model2D:
     def disk_velocity(self):
         """
             Compute the velocity field
+
+        :return ndarray:
         """
 
         vr = self.vel_model(self.model_radius, self.model_charac_rad, self.model_vmax)
@@ -90,10 +93,7 @@ class Model2D:
 
     def velocity_map(self):
         """
-
-        :param PSF psf:
-        :param Image vel:
-        :param Image flux_hr:
+            calculate the velocity map of the model
         """
 
         self.vel_map_hd = self.disk_velocity()
@@ -104,8 +104,9 @@ class Model2D:
 
     def linear_velocity_dispersion(self):
         """
+            return the velocity dispersion map needed for the fit process
 
-        :return ndarray:
+        :return ndarray: velocity dispersion map
         """
         # Calculation of the velocity dispersion
         sig = self.model_sig0 + self.model_slope * np.abs(self.model_radius)
@@ -115,11 +116,9 @@ class Model2D:
 
     def vel_disp_map(self):
         """
+            calculate the velocity dispersion map from the velocity field (with bestfit parameters) and the flux distribution
 
-        :param PSF psf:
-        :param Image flux_lr:
-        :param Image flux_hr:
-        :return ndarray:
+        :return ndarray: velocity dispersion map
         """
 
         term1 = np.zeros(self.vel.size)
@@ -131,38 +130,37 @@ class Model2D:
         term1[self.vel.mask] = tools.rebin_data(self.psf.convolution(sig ** 2 * self.flux.data), self.flux.oversample)[self.vel.mask] \
                                / self.flux.data_rebin[self.vel.mask]
         term2[self.vel.mask] = tools.rebin_data(self.psf.convolution(self.vel_map_hd ** 2 * self.flux.data), self.flux.oversample)[self.vel.mask] \
-                              / self.flux.data_rebin[self.vel.mask]
+                               / self.flux.data_rebin[self.vel.mask]
         term3[self.vel.mask] = (tools.rebin_data(self.psf.convolution(self.vel_map_hd * self.flux.data), self.flux.oversample)[self.vel.mask] /
-                            self.flux.data_rebin[self.vel.mask]) ** 2
+                                self.flux.data_rebin[self.vel.mask]) ** 2
 
         self.vel_disp = np.sqrt(term1 + term2 - term3)
 
     def least_square(self, p, fjac=None):
         """
-        Function minimized by mpfit.
+            Function minimized by mpfit.
 
-        Return (data-model)^2/err^2
+            Return (data-model)^2/err^2
+
+        :param ndarray p: array of parameters
+        :return ndarray:
         """
-        xcen = p[0]
-        ycen = p[1]
-        pos_angl = p[2]
-        incl = p[3]
-        syst_vel = p[4]
-        vmax = p[5]
-        charac_rad = p[6]
 
-        self.set_parameters(xcen, ycen, pos_angl, incl, syst_vel, vmax, charac_rad)
+        self.set_parameters(*p)
         self.velocity_map()
 
         return [0, np.reshape((self.vel.data[self.vel.mask]-self.vel_map[self.vel.mask])/self.errvel.data[self.vel.mask], -1)]
 
     def log_likelihood(self, cube, ndim, nparams):
         """
-        log likelihood function which maximized by multinest
+            log likelihood function which maximized by multinest
+
+            Return sum[(data-model)^2/(2*err^2)]
 
         :param ndarray cube: data whith n_params dimension
         :param int ndim: number of dimension if different of the number of paramerters
         :param int nparams: number of parameters
+        :return float:
         """
         self.set_parameters(cube[0], cube[1], cube[2], cube[3], cube[4], cube[5], cube[6])
         self.velocity_map()
