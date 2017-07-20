@@ -4,6 +4,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname('../Class/'), '.
 import time
 from Class.Model2D import Model2D
 import Tools.cap_mpfit as mpfit
+import logging
+
+logger = logging.getLogger('__main__')
 
 
 def use_mpfit(model, params, quiet=False):
@@ -33,7 +36,7 @@ def use_mpfit(model, params, quiet=False):
         if params[params['parname'][i]]['fixed'] == 1:
             parinfo[i]['fixed'] = 1
 
-    print('\n start fit with mpfit')
+    logger.info(' start fit with mpfit')
     t1 = time.time()
 
     # ###  Call mpfit
@@ -41,20 +44,19 @@ def use_mpfit(model, params, quiet=False):
     # ###
 
     t2 = time.time()
-    print(' fit done in: {:6.2f} s\n'.format(t2-t1))
+    logger.info(' fit done in: {:6.2f} s\n'.format(t2-t1))
 
-    # Print results on screen
-    print(' fit status:', model_fit.status)
-    print(' Chi2R: {} DOF: {}'.format(model_fit.fnorm/model_fit.dof, model_fit.dof))
+    # Print results on the prompt screen
+    logger.info(' fit status: {}'.format(model_fit.status))
+    logger.info(' Chi2R: {} DOF: {}'.format(model_fit.fnorm/model_fit.dof, model_fit.dof))
 
-    print('', '-' * (len(params['parname'])*12))
-    print('{0:^{width}}{1:^{width}}{2:^{width}}{3:^{width}}{4:^{width}}'
-          '{5:^{width}}{6:^{width}}'.format(*params['parname'], width=12))
-    print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}{4:^{width}.{prec}f}'
-          '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model_fit.params, width=12, prec=6))
-    print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}{4:^{width}.{prec}f}'
-          '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model_fit.perror, width=12, prec=6))
-    print('', '-' * (len(params['parname'])*12))
+    logger.info(' {0:^{width}}{1:^{width}}{2:^{width}}{3:^{width}}{4:^{width}}'
+                '{5:^{width}}{6:^{width}}'.format(*params['parname'], width=12))
+    logger.info('-' * (len(params['parname'])*12))
+    logger.info(' {0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}{4:^{width}.{prec}f}'
+                '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model_fit.params, width=12, prec=6))
+    logger.info(' {0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}{4:^{width}.{prec}f}'
+                '{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*model_fit.perror, width=12, prec=6))
 
     return {'results': {params['parname'][i]: {'value': model_fit.params[i], 'error': model_fit.perror[i]} for i in range(len(params['parname']))},
             'mpfit': {'chi2r': model_fit.fnorm/model_fit.dof, 'dof': model_fit.dof}}

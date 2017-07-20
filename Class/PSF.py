@@ -17,7 +17,7 @@ class PSF:
 
     def __init__(self, flux, img_psf=None, fwhm_lr=3.5, smooth=0):
         """
-            __init__ constructor of the PSF class
+            constructor of the PSF class
 
         :param Image flux:
         :param ndarray img_psf: image of the PSF

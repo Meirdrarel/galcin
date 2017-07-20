@@ -18,6 +18,12 @@ from astropy.io import ascii
 
 
 def main(parser):
+    """
+        This section is not update from last changes of other modules, they must be pass parameters from a YAML config file
+
+    :param parser:
+    :return:
+    """
     parser.add_argument('path', help='directory where will create the map', type=str)
     parser.add_argument('-fm',  default='flat', help='flux model', type=str)
     parser.add_argument('-vm', default='flat', help='velocity model', type=str)
@@ -128,7 +134,7 @@ def main(parser):
     names = ['x', 'y', 'pa', 'incl', 'vs', 'vm', 'rd', 'sig0', 'fwhm', 'smooth', 'oversample', 'rtrunc']
     formats = {'x': '%10.1f', 'y': '%10.1f', 'pa': '%10.1f', 'incl': '%10.1f', 'vs': '%10.1f', 'vm': '%10.1f', 'rd': '%10.1f', 'sig0': '%10.1f',
                'fwhm': '%10.1f', 'smooth': '%10.1f', 'oversample': '%10.1f', 'rtrunc': '%10.1f'}
-    ascii.write(params, args.path+'param_model.txt', names=names, delimiter=None, formats=formats, format='fixed_width', overwrite=True)
+    # ascii.write(params, args.path+'param_model.txt', names=names, delimiter=None, formats=formats, format='fixed_width', overwrite=True)
 
 
 if __name__ == '__main__':

@@ -11,25 +11,27 @@ class Model2D:
         Compute the velocity field and the dispersion of a model using observed data in input.
         This model can be used only with rotational curves with 3 parameters like which in 'velocity_model.py'
 
-        Parameters:
-            :param Image vel: represent the velocity field to fit
-            :param Image errvel: the error map of the velocity (vel)
-            :param Image flux: flux distribution at the same or in high resolution than the velocity
-            :param PSF psf: the class of the psf
-            :param func vel_model: velocity function used to create the model
-            :param float sig0: velocity dispersion of the model
-            :param float slope: slope of the velocity dispersion
         """
     def __init__(self, vel, errvel, flux, psf, vel_model, sig0, slope=0.):
+        """
+
+        :param Image vel: represent the velocity field to fit
+        :param Image errvel: the error map of the velocity (vel)
+        :param Image flux: flux distribution at the same or in high resolution than the velocity
+        :param PSF psf: the class of the psf
+        :param func vel_model: velocity function used to create the model
+        :param float sig0: velocity dispersion of the model
+        :param float slope: slope of the velocity dispersion
+        """
 
         # None parameters
-        self.model_pos_angl = None
+        self.model_pa = None
         self.model_incl = None
-        self.model_xcen = None
-        self.model_ycen = None
-        self.model_vmax = None
-        self.model_syst_vel = None
-        self.model_charac_rad = None
+        self.model_xc = None
+        self.model_yc = None
+        self.model_vm = None
+        self.model_vs = None
+        self.model_rt = None
         self.model_radius = None
         self.model_theta = None
 
@@ -45,27 +47,27 @@ class Model2D:
         self.flux = flux
         self.psf = psf
 
-    def set_parameters(self, xcen, ycen, pos_angl, incl, syst_vel, max_vel, charac_rad):
+    def set_parameters(self, xc, yc, pa, incl, vs, vm, rt):
         """
             set the value of the model parameters
 
-        :param float xcen: abscissa of the center in pixel
-        :param float ycen: ordinate of the center in pixel
-        :param float pos_angl: position angle of the major axis in degree
+        :param float xc: abscissa of the center in pixel
+        :param float yc: ordinate of the center in pixel
+        :param float pa: position angle of the major axis in degree
         :param float incl: inclination of the disk in degree
-        :param float syst_vel: systemic velocity in km/s
-        :param float max_vel: maximum rotation velocity in km/s
-        :param float charac_rad: characteristic radius, where the maximum velocity is reached
+        :param float vs: systemic velocity in km/s
+        :param float vm: maximum rotation velocity in km/s
+        :param float rt: characteristic radius, where the maximum velocity is reached
         """
 
-        self.model_pos_angl = pos_angl
+        self.model_pa = pa
         self.model_incl = incl
-        self.model_xcen = (xcen + 0.5) * self.flux.get_oversamp() - 0.5
-        self.model_ycen = (ycen + 0.5) * self.flux.get_oversamp() - 0.5
-        self.model_vmax = max_vel
-        self.model_syst_vel = syst_vel
-        self.model_charac_rad = charac_rad*self.flux.get_oversamp()
-        self.model_radius, self.model_theta = tools.sky_coord_to_galactic(self.model_xcen, self.model_ycen, self.model_pos_angl, self.model_incl,
+        self.model_xc = (xc + 0.5) * self.flux.get_oversamp() - 0.5
+        self.model_yc = (yc + 0.5) * self.flux.get_oversamp() - 0.5
+        self.model_vm = vm
+        self.model_vs = vs
+        self.model_rt = rt*self.flux.get_oversamp()
+        self.model_radius, self.model_theta = tools.sky_coord_to_galactic(self.model_xc, self.model_yc, self.model_pa, self.model_incl,
                                                                           im_size=np.shape(self.vel_map_hd))
 
     def get_parameter(self):
@@ -74,8 +76,8 @@ class Model2D:
 
         :return ndarray:
         """
-        return [(self.model_xcen + 0.5) * self.flux.get_oversamp() - 0.5, (self.model_ycen + 0.5) * self.flux.get_oversamp() - 0.5,
-                self.model_pos_angl, self.model_incl, self.model_syst_vel, self.model_vmax, self.model_charac_rad/self.flux.get_oversamp()]
+        return [(self.model_xc + 0.5) * self.flux.get_oversamp() - 0.5, (self.model_yc + 0.5) * self.flux.get_oversamp() - 0.5,
+                self.model_pa, self.model_incl, self.model_vs, self.model_vm, self.model_rt/self.flux.get_oversamp()]
 
     def disk_velocity(self):
         """
@@ -84,10 +86,10 @@ class Model2D:
         :return ndarray:
         """
 
-        vr = self.vel_model(self.model_radius, self.model_charac_rad, self.model_vmax)
+        vr = self.vel_model(self.model_radius, self.model_rt, self.model_vm)
 
         # Calculation of the velocity field
-        v = vr * math.sin(math.radians(self.model_incl)) * self.model_theta + self.model_syst_vel
+        v = vr * math.sin(math.radians(self.model_incl)) * self.model_theta + self.model_vs
 
         return v
 

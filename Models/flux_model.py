@@ -2,12 +2,12 @@ import numpy as np
 import Tools.tools as tools
 
 
-def flat_disk_intensity(xcen, ycen, pos_angl, incl, rd, center_bright, rtrunc, im_size):
+def flat_disk_intensity(xc, yc, pa, incl, rd, center_bright, rtrunc, im_size):
     """
 
-    :param float xcen: position of the center in abscissa
-    :param float ycen: position of the center in ordinate
-    :param float pos_angl:
+    :param float xc: position of the center in abscissa
+    :param float yc: position of the center in ordinate
+    :param float pa:
     :param float incl:
     :param float rd:
     :param float center_bright:
@@ -15,7 +15,7 @@ def flat_disk_intensity(xcen, ycen, pos_angl, incl, rd, center_bright, rtrunc, i
     :param ndarray im_size:
     """
 
-    r, theta = tools.sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=im_size)
+    r, theta = tools.sky_coord_to_galactic(xc, yc, pa, incl, im_size=im_size)
 
     flux = np.zeros(np.shape(r))
 
@@ -26,19 +26,19 @@ def flat_disk_intensity(xcen, ycen, pos_angl, incl, rd, center_bright, rtrunc, i
     return flux
 
 
-def exponential_disk_intensity(xcen, ycen, pos_angl, incl, rd, center_bright, rtrunc, im_size):
+def exponential_disk_intensity(xc, yc, pa, incl, rd, center_bright, rtrunc, im_size):
     """
 
-    :param float xcen: 
-    :param float ycen: 
-    :param float pos_angl: 
+    :param float xc:
+    :param float yc:
+    :param float pa:
     :param float incl: 
     :param float rd: 
     :param float center_bright: 
     :param float rtrunc: 
     :param ndarray im_size:
     """
-    r, theta = tools.sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=im_size)
+    r, theta = tools.sky_coord_to_galactic(xc, yc, pa, incl, im_size=im_size)
 
     if rd != 0:
         flux = center_bright * np.exp(- np.abs(r) / rd)

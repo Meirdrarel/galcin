@@ -7,6 +7,10 @@ import pymultinest
 import time
 from Class.Model2D import Model2D
 import matplotlib.pyplot as plt
+import logging
+
+
+logger = logging.getLogger('__main__')
 
 
 def use_pymultinest(model, params, quiet=True, nbp=0, pltstats=False, rank=0, path=None, whd=None):
@@ -29,7 +33,7 @@ def use_pymultinest(model, params, quiet=True, nbp=0, pltstats=False, rank=0, pa
 
             Define the limits of the parameters' space where multinest have to explore
 
-        :param ndarray cube: data whith n_params dimension
+        :param ndarray cube: data with n_params dimension
         :param int ndim: number of dimension if different of the number of parameters
         :param int nparams: number of parameters
         """
@@ -50,20 +54,20 @@ def use_pymultinest(model, params, quiet=True, nbp=0, pltstats=False, rank=0, pa
     if rank == 0:
         t2 = time.time()
 
-        print('\n fit done in: {:6.2f} s \n'.format(t2-t1))
+        logger.info(' fit done in: {:6.2f} s \n'.format(t2-t1))
 
         output = pymultinest.Analyzer(n_params=len(params['parname']), outputfiles_basename=path+'/res'+whd+'_')
         bestfit = output.get_best_fit()
         stats = output.get_mode_stats()
 
-        print('', '-' * (len(params['parname'])*12))
-        print('{0:^{width}}{1:^{width}}{2:^{width}}{3:^{width}}{4:^{width}}{5:^{width}}'
-              '{6:^{width}}'.format(*params['parname'], width=12))
-        print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}'
-              '{4:^{width}.{prec}f}{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*bestfit['parameters'], width=12, prec=6))
-        print('{0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}'
-              '{4:^{width}.{prec}f}{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*stats['modes'][0]['sigma'], width=12, prec=6))
-        print('', '-' * (len(params['parname'])*12))
+        # print results ont he prompt screen
+        logger.info(' {0:^{width}}{1:^{width}}{2:^{width}}{3:^{width}}{4:^{width}}{5:^{width}}'
+                    '{6:^{width}}'.format(*params['parname'], width=12))
+        logger.info('-' * (len(params['parname'])*12))
+        logger.info(' {0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}'
+                    '{4:^{width}.{prec}f}{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*bestfit['parameters'], width=12, prec=6))
+        logger.info(' {0:^{width}.{prec}f}{1:^{width}.{prec}f}{2:^{width}.{prec}f}{3:^{width}.{prec}f}'
+                    '{4:^{width}.{prec}f}{5:^{width}.{prec}f}{6:^{width}.{prec}f}'.format(*stats['modes'][0]['sigma'], width=12, prec=6))
 
         # plot all parameters probabilities in a pdf file
         if pltstats is True:
@@ -82,6 +86,7 @@ def use_pymultinest(model, params, quiet=True, nbp=0, pltstats=False, rank=0, pa
                     plt.ylabel(params['parname']()[j])
 
             plt.savefig(path+'/proba'+whd+'.pdf', bbox_inches='tight')
+            logger.info('Plot of probabilities saved as pdf')
 
         return {'results': {params['parname'][i]: {'value': bestfit['parameters'][i],
                                                    'error': stats['modes'][0]['sigma'][i]} for i in range(len(params['parname']))},

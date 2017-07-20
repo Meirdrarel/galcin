@@ -4,6 +4,9 @@ from astropy.io import fits
 import os
 import sys
 import yaml
+import logging
+
+logger = logging.getLogger('__main__')
 
 
 def sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=(240, 240)):
@@ -86,16 +89,16 @@ def search_file(path, filename):
         for root, dirs, files in os.walk(path):
             if filename in files:
                 if path != '.':
-                    print('{} found in {}'.format(filename, root))
+                    logger.debug('{} found in {}'.format(filename, root))
                     return filename
                 else:
-                    print('{} found in {}'.format(filename, root))
+                    logger.debug('{} found in {}'.format(filename, root))
                     return root+'/'+filename
-        print("File {} not found in directory {} and its subdirectories".format(filename, path))
-        sys.exit()
-    except FileNotFoundError:
-        print('No such file or directory {}'.format(path))
-        sys.exit()
+        logger.error("File {} not found in directory {} and its subdirectories".format(filename, path))
+        sys.exit(1)
+    except FileNotFoundError as F:
+        logger.exception('No such file or directory {}'.format(path))
+        sys.exit(1)
 
 
 def make_dir(path, config):
@@ -118,7 +121,7 @@ def make_dir(path, config):
             dirname += key[0]
 
     if os.path.isdir(path+dirname) is False:
-        print("\ncreate directory {}".format(dirname))
+        logger.info("\ncreate directory {}".format(dirname))
         os.makedirs(path+dirname)
     return path+dirname
 
@@ -147,11 +150,13 @@ def write_yaml(path, params, galname, whd):
 
     try:
         dictowrite.update({'mpfit stats': {'chi2r': float(params['mpfit']['chi2r']), 'dof': float(params['mpfit']['dof'])}})
-    except KeyError:
+    except KeyError as K:
+        logger.debug("keyError: Key 'mpfit' not found in the results' dictionary")
         pass
     try:
         dictowrite.update({'PymultiNest': {'log likelihood': params['PyMultiNest']['log likelihood']}})
-    except KeyError:
+    except KeyError as K:
+        logger.debug("keyError: Key 'PyMultiNest' not found in the results' dictionary")
         pass
 
     yaml.dump(dictowrite, outstream, default_flow_style=False)

@@ -5,12 +5,12 @@ import Tools.tools as tools
 
 
 class Image:
-    def __init__(self, filename, mask=None):
-        """
-        Stock fits file and determine all parameters like size etc ...
+    """
+            Stock fits file and determine all parameters like size etc ...
 
-        :param string filename: path+name of the file, can be a numpy array.
+        :param string or ndarray filename: path+name of the file, can be a numpy array.
         """
+    def __init__(self, filename, mask=None):
         self.data_rebin = None
 
         if type(filename) is str:
@@ -43,6 +43,9 @@ class Image:
             self.nan_to_num()
 
     def nan_to_num(self):
+        """
+            convert 'nan' into 0
+        """
         self.data = np.nan_to_num(self.data)
 
     def get_size(self):
@@ -61,6 +64,10 @@ class Image:
         return self.oversample
 
     def interpolation(self):
+        """
+            Perform an interpolation of the image at higher resolution and stock the new image
+
+        """
         x = np.linspace(0, self.length, self.length)  # + 0.5*self.oversample
         y = np.linspace(0, self.high, self.high)  # + 0.5*self.oversample
         new_x = np.linspace(0, self.length, self.length * int(self.oversample))
@@ -74,4 +81,9 @@ class Image:
         self.size *= self.oversample
 
     def conv_inter_flux(self, psf):
+        """
+            Do a convolution of the interpolated image with a psf and stock the result
+
+        :param PSF psf: psf object
+        """
         self.data_rebin = tools.rebin_data(psf.convolution(self.data), self.oversample)
