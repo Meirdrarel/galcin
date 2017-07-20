@@ -53,10 +53,11 @@ def main(path=None, filename=None, rank=0):
     :param int rank: id of the thread when the program is run with MPI4PY
     """
 
-    try:
-        logger.info('\n entering in directory: {}'.format(path.split('/')[-2]))
-    except IndexError as I:
-        logger.info('\n entering in directory: {}'.format(os.getcwd()))
+    if rank == 0:
+        try:
+            logger.info('\n entering in directory: {}'.format(path.split('/')[-2]))
+        except IndexError as I:
+            logger.info('\n entering in directory: {}'.format(os.getcwd()))
 
     # Open the YAML file and preset some parts
     input_stream = open(tools.search_file(path, filename), 'r')
