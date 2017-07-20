@@ -88,17 +88,22 @@ def search_file(path, filename):
     try:
         for root, dirs, files in os.walk(path):
             if filename in files:
-                if path != '.':
-                    logger.debug('{} found in {}'.format(filename, root))
+                if root == '':
+                    logger.debug("path is '' :"+filename)
                     return filename
+                elif root == path:
+                    toreturn = root+filename
+                    logger.debug(toreturn)
+                    return toreturn
                 else:
-                    logger.debug('{} found in {}'.format(filename, root))
-                    return root+'/'+filename
+                    toreturn = root+'/'+filename
+                    logger.debug(toreturn)
+                    return toreturn
         logger.error("File {} not found in directory {} and its subdirectories".format(filename, path))
-        sys.exit(1)
+        sys.exit(0)
     except FileNotFoundError as F:
         logger.exception('No such file or directory {}'.format(path))
-        sys.exit(1)
+        sys.exit(0)
 
 
 def make_dir(path, config):
@@ -116,14 +121,20 @@ def make_dir(path, config):
 
     dirname = config['config fit']['method'] + '_' + config['config fit']['model']
 
+    suffix = ''
     for key in config['init fit']['parname']:
         if config['init fit'][key]['fixed'] == 1:
-            dirname += key[0]
+            suffix += key[0]
+
+    if suffix != '':
+        dirname += '_'+suffix
 
     if os.path.isdir(path+dirname) is False:
         logger.info("\ncreate directory {}".format(dirname))
         os.makedirs(path+dirname)
-    return path+dirname
+    toreturn = path+dirname
+    logger.debug('makedir: {}'.format(toreturn))
+    return toreturn
 
 
 def write_yaml(path, params, galname, whd):

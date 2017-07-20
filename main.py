@@ -23,8 +23,8 @@ except ImportError:
     rank = 0
     pass
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__) or logging.getLogger('__main__')
 
 
 def main(path=None, filename=None, rank=0):
@@ -99,7 +99,7 @@ def main(path=None, filename=None, rank=0):
         img_psf = fits.getdata(tools.search_file(path, files['psf']))
         logger.debug('import psf from {}'.format(tools.search_file(path, files['psf'])))
     else:
-        logger.debug('2D gaussian with fwhm={} pixels'.format(np.sqrt(confmod['psfx']**2+confmod['smooth']**2)))
+        logger.debug('2D gaussian with fwhm={} pixels in high resolution'.format(np.sqrt(confmod['psfx']**2+confmod['smooth']**2)*vel.oversample))
     psf = PSF(flux, img_psf=img_psf, fwhm_lr=confmod['psfx'], smooth=confmod['smooth'])
 
     # Do the convolution and the rebinning of the high resolution flux
@@ -124,7 +124,7 @@ def main(path=None, filename=None, rank=0):
                          " use 'mpfit' for MPFIT or 'multinest' for PyMultiNest")
         else:
             logger.warning(" thread {} not used, for mpfit mpi is not necessary".format(rank))
-        sys.exit(1)
+        sys.exit()
 
     # Write fits file from the bestfit set of parameters and results in a YAML file
     if rank == 0:
