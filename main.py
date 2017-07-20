@@ -55,9 +55,9 @@ def main(path=None, filename=None, rank=0):
 
     if rank == 0:
         try:
-            logger.info('\n entering in directory: {}'.format(path.split('/')[-2]))
+            logger.info(' entering in directory: {}'.format(path.split('/')[-2]))
         except IndexError as I:
-            logger.info('\n entering in directory: {}'.format(os.getcwd()))
+            logger.info(' entering in directory: {}'.format(os.getcwd()))
 
     # Open the YAML file and preset some parts
     input_stream = open(tools.search_file(path, filename), 'r')
@@ -78,9 +78,11 @@ def main(path=None, filename=None, rank=0):
     # Test the size of the flux image with de velocity field and perform an interpolation if is needed
     length_rap = flux.length / vel.get_lenght()
     high_rap = flux.high / vel.get_high()
-    logger.warning(' Change the calculation of the rapport of oversampling')
-    logger.debug(' oversampling determine from size of images')
-    logger.debug(' length: {} \thigh: {}'.format(length_rap, high_rap))
+    if rank == 0:
+        logger.warning(" change the calculation of the rapport of oversampling"
+                       "\n\t\t  pixel size is not in the fits' header")
+        logger.debug(" oversampling determine from size of images")
+        logger.debug(" length: {} \thigh: {}".format(length_rap, high_rap))
     if length_rap == 1 or high_rap == 1:
         if length_rap == high_rap:
             flux.set_oversamp(int(np.ceil(8 / params0['rt']['value'])))
@@ -117,8 +119,11 @@ def main(path=None, filename=None, rank=0):
         results = use_pymultinest(model, params0, quiet=config['config fit']['verbose'], nbp=conf_pymulti['nbp'], pltstats=conf_pymulti['plt stats'],
                                   rank=rank, path=out_path, whd=whd)
     else:
-        logger.critical(" Wrong fit's method input in the YAML config file"
-                        " use 'mpfit' for MPFIT or 'multinest' for PyMultiNest")
+        if rank == 0:
+            logger.error(" wrong fit's method input in the YAML config file"
+                         " use 'mpfit' for MPFIT or 'multinest' for PyMultiNest")
+        else:
+            logger.warning(" thread {} not used, for mpfit mpi is not necessary".format(rank))
         sys.exit(1)
 
     # Write fits file from the bestfit set of parameters and results in a YAML file
