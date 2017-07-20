@@ -17,9 +17,9 @@ But you can add more rotational curves in "velocity_model.py" or create another 
 - MPFIT: Which uses the Levenberg-Marquardt technique to solve the
  least-squares problem.
 
-- PyMultiNest : use a Nested Sampling Monte Carlo library
+- PyMultiNest : use a Nested Sampling Monte Carlo library and bayesian statistics.
 
-##Installation
+## Installation
 
 The program need PyMultiNest installed, please refer<a href="https://johannesbuchner.github.io/PyMultiNest/"> here</a>for 
 its installation guide.
@@ -41,8 +41,7 @@ The program need a config file in **YAML**.
 
 ### Compatible with MPI4PY
 
-For more information and how to install it, follow<a href="http://pythonhosted.org/mpi4py/"> this link<a/>
-
+For more information and how to install it, follow<a href="http://pythonhosted.org/mpi4py/"> this link<a/>.
 To execute the program with **mpi4py**:
 ```
 mpiexec -n (nbcore) main.py path filename
