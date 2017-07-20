@@ -15,6 +15,7 @@ from Class.PSF import PSF
 from SubProcess.use_mpfit import use_mpfit
 from SubProcess.use_pymultinest import use_pymultinest
 
+# Test if mpi4py is installed and if is it used
 try:
     from mpi4py import MPI
     if MPI.COMM_WORLD.Get_size() > 0:
@@ -23,6 +24,7 @@ except ImportError:
     rank = 0
     pass
 
+# For debug use logging.DEBUG instead of logging.INFO
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__) or logging.getLogger('__main__')
 
