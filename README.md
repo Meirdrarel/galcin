@@ -37,7 +37,9 @@ import main.py
     
 main.main(path, filename, rank=0)
 ```
-The program need a config file in **YAML**.
+
+where path can be absolute or relative, filename is the name of the **YAML** configuration file. The parameter rank is the id of the thread.
+Example if you run the program with mpi and 4 core, rank may be equal from 0 to 3.
 
 ### Compatible with MPI4PY
 
@@ -51,5 +53,7 @@ mpiexec -n (nbcore) main.py path filename
 Outputs are written in a directory where the **YAML** config file is. The name of the directory depend of the method, the model and fixed paramters like: 
 method_model_fixedparams. A recapitulation of parameters of the model is written in the header of fits file and in a **YAML** file. 
 
+###Example
+There is a Example directory in which you have fits files and a **YAML** file as example and try the program.
 
 
