@@ -56,4 +56,7 @@ method_model_fixedparams. A recapitulation of parameters of the model is written
 ###Example
 There is a Example directory in which you have fits files and a **YAML** file as example and try the program.
 
+###Create model
 
+The subprocess for create map was used to validate the program (cross test) with existing programs.
+This subprocess need to be updated from the last changes of the architecture and the addition of the data language **YAML**.

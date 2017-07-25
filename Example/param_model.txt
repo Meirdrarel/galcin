@@ -1,0 +1,5 @@
+velocity model: flat
+flux model: exp with characteristic radius 4 pixels
+parameters:
+      x           y          pa        incl          vs          vm          rd        sig0        fwhm      smooth  oversample      rtrunc 
+   15.0        15.0         0.0        45.0         0.0       200.0         4.0        40.0         3.5         0.0         5.0         8.0 

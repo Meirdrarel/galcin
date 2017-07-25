@@ -1,0 +1,71 @@
+#Configuration file needed by the program
+#YAML is used
+####
+gal name: test
+
+#In this section write the name of fits' files from the directory which contain this file
+#The program can search file in subdirectories
+files:
+    flux: flux_HD.fits
+    vel: modelV.fits
+    errvel: evel.fits
+    disp:
+    psf:
+#This section is to set parameters needed by the model used
+init fit:
+  #Inside 'parname' write the parameters which used by the model in the same order than you declared your model
+  parname: ['xc', 'yc', 'pa', 'inc', 'vs', 'vm', 'rt']
+  #For each parameters, set the initial 'value', 'limits' and if is 'fixed' (1) or not (0)
+  #The order of parameters is no important
+  xc:
+   desc: center abscissa in pixel
+   value: 14.8
+   limits: [10, 20]
+   fixed: 1
+  yc:
+   desc: center ordinate in pixel
+   value: 14.9
+   limits: [10, 20]
+   fixed: 1
+  pa:
+   desc: positon angle in degree
+   value: 0
+   limits: [0, 180]
+   fixed: 0
+  inc:
+   desc: inclination in degree
+   value: 45
+   limits: [10, 80]
+   fixed: 1
+  vs:
+   desc: systemic velocity in km/s
+   value: 0
+   limits: [-10, 10]
+   fixed: 0
+  vm:
+   desc: model velocity in km/s
+   value: 209
+   limits: [0, 500]
+   fixed: 0
+  rt:
+   desc: transition radius
+   value: 4
+   limits: [1, 12]
+   fixed: 0
+#This section is for parameters of the model which are not fitted
+conf model:
+  sig: 40
+  slope: 0
+  psfx: 3.5
+  psfz: 49
+  smooth: 0
+#Selection the 'model' wanted, the 'method' and others things about the running of the program
+config fit:
+  model: flat
+  method: mpfit
+  verbose: False
+  #parameters about PyMultiNest running
+  PyMultiNest:
+    nbp: 0
+    plt stats: False
+    plt xy: True
