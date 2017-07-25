@@ -9,29 +9,27 @@ import logging
 logger = logging.getLogger('__main__')
 
 
-def sky_coord_to_galactic(xcen, ycen, pos_angl, incl, im_size=(240, 240)):
+def sky_coord_to_galactic(xc, yc, pa, incl, im_size=None):
     """
         Convert position from Sky coordinates to Galactic coordinates
 
-    :param float xcen: position of the center in arcsec
-    :param float ycen: position of the center in arcsec
-    :param float pos_angl: position angle of the major axis degree
+    :param float xc: position of the center in arcsec
+    :param float yc: position of the center in arcsec
+    :param float pa: position angle of the major axis degree
     :param float incl: inclination of the disk in degree
     :param ndarray im_size: maximum radius of the scene (arcsec),
                           im_size should be larger than the slit length + seeing (Default im_size=100)
-    :param float res: resolution of the high resolution data (arcsec),
-                      res should be at least n x pixel size (Default res=0.04)
-    :return ndarray: [r, theta]
+    :return list[ndarray, ndarray]: [r, theta]
     """
     y, x = np.indices(im_size)
-    den = (y - ycen) * math.cos(math.radians(pos_angl)) - (x - xcen) * math.sin(math.radians(pos_angl))
-    num = - (x - xcen) * math.cos(math.radians(pos_angl)) - (y - ycen) * math.sin(math.radians(pos_angl))
+    den = (y - yc) * math.cos(math.radians(pa)) - (x - xc) * math.sin(math.radians(pa))
+    num = - (x - xc) * math.cos(math.radians(pa)) - (y - yc) * math.sin(math.radians(pa))
     r = (den ** 2 + (num / math.cos(math.radians(incl))) ** 2) ** 0.5
     tpsi = num * 1.
 
     tpsi[np.where(den != 0)] /= den[np.where(den != 0)]  # to avoid a NaN at the center
     den2 = math.cos(math.radians(incl)) ** 2 + tpsi ** 2
-    sg = np.sign(den)  # signe
+    sg = np.sign(den)  # sign
     ctheta = sg * (math.cos(math.radians(incl)) ** 2 / den2) ** 0.5  # azimuth in galaxy plane
     
     return [r, ctheta]
@@ -62,7 +60,7 @@ def write_fits(data, filename, config, results, mask=None):
     :param ndarray data: data to write in fits file
     :param str filename: name of the fits file (with path)
     :param dict config: config file
-    :param disct results: dictionary of the results
+    :param dict results: dictionary of the results
     :param ndarray[bool] mask: boolean mask
     :return:
     """
@@ -71,7 +69,11 @@ def write_fits(data, filename, config, results, mask=None):
 
     hdu = fits.PrimaryHDU(data=data)
     for key in config['init fit']['parname']:
-        hdu.header.append((key, results['results'][key]['value'], config['init fit'][key]['desc']))
+        try:
+            hdu.header.append((key, results['results'][key]['value'], config['init fit'][key]['desc']))
+        except KeyError as k:
+            hdu.header.append((key, results['results'][key]['value']))
+            logger.exception("key 'desc' not found, parameter '{}' written without description".format(key), exc_info=k)
 
     hdulist = fits.HDUList(hdu)
     hdulist.writeto(filename + '.fits', checksum=True, overwrite=True)
@@ -100,16 +102,16 @@ def search_file(path, filename):
                     logger.debug(toreturn)
                     return toreturn
         logger.error("File {} not found in directory {} and its subdirectories".format(filename, path))
-        sys.exit(0)
+        sys.exit()
     except FileNotFoundError as F:
-        logger.exception('No such file or directory {}'.format(path))
-        sys.exit(0)
+        logger.exception('No such file or directory {}'.format(path), exc_info=F)
+        sys.exit()
 
 
 def make_dir(path, config):
     """
         Create the directory where results will be written
-        The name of the directory depend of the parameters fixed
+        The name of the directory depend of fixed parameters
 
     :param path: path where fits files are
     :param dict config: YAML config dictionary
@@ -161,12 +163,12 @@ def write_yaml(path, params, galname, whd):
 
     try:
         dictowrite.update({'mpfit stats': {'chi2r': float(params['mpfit']['chi2r']), 'dof': float(params['mpfit']['dof'])}})
-    except KeyError as K:
+    except KeyError:
         logger.debug("keyError: Key 'mpfit' not found in the results' dictionary")
         pass
     try:
         dictowrite.update({'PymultiNest': {'log likelihood': params['PyMultiNest']['log likelihood']}})
-    except KeyError as K:
+    except KeyError:
         logger.debug("keyError: Key 'PyMultiNest' not found in the results' dictionary")
         pass
 

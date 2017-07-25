@@ -46,5 +46,10 @@ To execute the program with **mpi4py**:
 ```
 mpiexec -n (nbcore) main.py path filename
 ```
-## Mini-tuto
+## Output
+
+Outputs are written in a directory where the **YAML** config file is. The name of the directory depend of the method, the model and fixed paramters like: 
+method_model_fixedparams. A recapitulation of parameters of the model is written in the header of fits file and in a **YAML** file. 
+
+
 

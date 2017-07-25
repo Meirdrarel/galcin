@@ -50,6 +50,9 @@ def main(path=None, filename=None, rank=0):
 
             mpiexec -n (nbcore) main.py (path) (filename)
 
+        Output are written in a directory where the YAML file is,
+           the directory name is:  (method)_(model)_(paramfix)
+
     :param str path: path where the config file is
     :param str filename: name of the config file
     :param int rank: id of the thread when the program is run with MPI4PY
@@ -160,7 +163,9 @@ if __name__ == '__main__':
                                                  "\n\tor in a python shell/console by importing this file and call: \n"
                                                  "\n\t\tmain(path, filename, rank)\n"
                                                  "\n\tFor run with mpi type in the prompt: \n"
-                                                 "\n\t\tmpiexec -n (nbcore) main.py (path) (filename) \n",
+                                                 "\n\t\tmpiexec -n (nbcore) main.py (path) (filename) \n"
+                                                 "\n\tOutput are written in a directory where the YAML file is,"
+                                                 "\n\tthe directory name is:  (method)_(model)_(paramfix)",
                                      formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('path', help="path to the directory where YAML file is")
