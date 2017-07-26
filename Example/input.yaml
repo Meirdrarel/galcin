@@ -7,7 +7,7 @@ gal name: test
 #The program can search file in subdirectories
 files:
     flux: flux_HD.fits
-    vel: modelV.fits
+    vel: vel.fits
     errvel: evel.fits
     disp:
     psf:
