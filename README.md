@@ -1,7 +1,7 @@
 # name
 
 ### What is it?
-GalCin: Galactic Cinematic, fit a velocity model from observed velocity field of galaxy. 
+**GalCin: Galactic Cinematic**, fit a velocity model from observed velocity field of galaxy. 
 
 
 ### Model
