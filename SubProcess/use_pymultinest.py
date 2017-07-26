@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import logging
 
 
-logger = logging.getLogger('__main__')
+logger = logging.getLogger('__galcin__')
 
 
 def use_pymultinest(model, params, quiet=True, nbp=0, pltstats=False, rank=0, path=None, whd=None):

@@ -26,10 +26,10 @@ except ImportError:
 
 # For debug use logging.DEBUG instead of logging.INFO
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__) or logging.getLogger('__main__')
+logger = logging.getLogger('__galcin__')
 
 
-def main(path=None, filename=None, rank=0):
+def galcin(path=None, filename=None, rank=0):
     """
         (name not found) fit model to velocity field of galaxies.
         For more information see the help or refer to the git repository:
@@ -40,15 +40,15 @@ def main(path=None, filename=None, rank=0):
 
         This program can be lunch from console:
 
-            main.py (path) (filename)
+            galcin.py (path) (filename)
 
         or in a python shell/console by importing this file and call:
 
-            main(path, filename, rank)
+            galcin(path, filename, rank)
 
         For run with mpi type in the prompt:
 
-            mpiexec -n (nbcore) main.py (path) (filename)
+            mpiexec -n (nbcore) galcin.py (path) (filename)
 
         Output are written in a directory where the YAML file is,
            the directory name is:  (method)_(model)_(paramfix)
@@ -159,11 +159,11 @@ if __name__ == '__main__':
                                                  "\n\t\thttps://github.com/Meirdrarel/batman\n"
                                                  "\n\tdeveloped on python 3.6\n"
                                                  "\n\tThis program can be lunch from console: \n"
-                                                 "\n\t\tmain.py (path) (filename)\n"
+                                                 "\n\t\tgalcin.py (path) (filename)\n"
                                                  "\n\tor in a python shell/console by importing this file and call: \n"
-                                                 "\n\t\tmain(path, filename, rank)\n"
+                                                 "\n\t\tgalcin(path, filename, rank)\n"
                                                  "\n\tFor run with mpi type in the prompt: \n"
-                                                 "\n\t\tmpiexec -n (nbcore) main.py (path) (filename) \n"
+                                                 "\n\t\tmpiexec -n (nbcore) galcin.py (path) (filename) \n"
                                                  "\n\tOutput are written in a directory where the YAML file is,"
                                                  "\n\tthe directory name is:  (method)_(model)_(paramfix)",
                                      formatter_class=argparse.RawTextHelpFormatter)
@@ -172,6 +172,6 @@ if __name__ == '__main__':
     parser.add_argument('filename', help="Name of the YAML file which contain all parameters")
     args = parser.parse_args()
 
-    main(path=args.path, filename=args.filename, rank=rank)
+    galcin(path=args.path, filename=args.filename, rank=rank)
 
 

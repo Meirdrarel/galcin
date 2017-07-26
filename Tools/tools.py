@@ -6,7 +6,7 @@ import sys
 import yaml
 import logging
 
-logger = logging.getLogger('__main__')
+logger = logging.getLogger('__galcin__')
 
 
 def sky_coord_to_galactic(xc, yc, pa, incl, im_size=None):

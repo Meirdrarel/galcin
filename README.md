@@ -1,7 +1,7 @@
 # name
 
 ### What is it?
-(name) fit velocity model from velocity field of galaxy seen with MUSE. 
+GalCin: Galactic Cinematic, fit a velocity model from observed velocity field of galaxy. 
 
 
 ### Model
@@ -29,13 +29,13 @@ The program need also **astropy** and **yaml** libraries.
 ## How to lunch?
 (name) can be lunch from prompt with
 ```
-main.py path filename
+galcin.py path filename
 ```
 or in an python script/console by importing first and call the main function
 ```
-import main.py
+import galcin.py
     
-main.main(path, filename, rank=0)
+galcin.galcin(path, filename, rank=0)
 ```
 
 where path can be absolute or relative, filename is the name of the **YAML** configuration file. The parameter rank is the id of the thread.
@@ -46,7 +46,7 @@ Example if you run the program with mpi and 4 core, rank may be equal from 0 to 
 For more information and how to install it, follow<a href="http://pythonhosted.org/mpi4py/"> this link<a/>.
 To execute the program with **mpi4py**:
 ```
-mpiexec -n (nbcore) main.py path filename
+mpiexec -n (nbcore) galcin.py path filename
 ```
 ## Output
 

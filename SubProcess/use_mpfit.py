@@ -6,7 +6,7 @@ from Class.Model2D import Model2D
 import Tools.cap_mpfit as mpfit
 import logging
 
-logger = logging.getLogger('__main__')
+logger = logging.getLogger('__galcin__')
 
 
 def use_mpfit(model, params, quiet=False):
