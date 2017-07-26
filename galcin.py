@@ -154,23 +154,22 @@ def galcin(path=None, filename=None, rank=0):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="\t(name not found) fit model to velocity field of galaxies. "
-                                                 "\n\tFor more information see the help or refer to the git repository:\n"
-                                                 "\n\t\thttps://github.com/Meirdrarel/batman\n"
-                                                 "\n\tdeveloped on python 3.6\n"
-                                                 "\n\tThis program can be lunch from console: \n"
-                                                 "\n\t\tgalcin.py (path) (filename)\n"
-                                                 "\n\tor in a python shell/console by importing this file and call: \n"
-                                                 "\n\t\tgalcin(path, filename, rank)\n"
-                                                 "\n\tFor run with mpi type in the prompt: \n"
-                                                 "\n\t\tmpiexec -n (nbcore) galcin.py (path) (filename) \n"
-                                                 "\n\tOutput are written in a directory where the YAML file is,"
-                                                 "\n\tthe directory name is:  (method)_(model)_(paramfix)",
+    parser = argparse.ArgumentParser('-h', '--help', description="\t(name not found) fit model to velocity field of galaxies. "
+                                                   "\n\tFor more information see the help or refer to the git repository:\n"
+                                                   "\n\t\thttps://github.com/Meirdrarel/batman\n"
+                                                   "\n\tdeveloped on python 3.6\n"
+                                                   "\n\tThis program can be lunch from console: \n"
+                                                   "\n\t\tgalcin.py (path) (filename)\n"
+                                                   "\n\tor in a python shell/console by importing this file and call: \n"
+                                                   "\n\t\tgalcin(path, filename, rank)\n"
+                                                   "\n\tFor run with mpi type in the prompt: \n"
+                                                   "\n\t\tmpiexec -n (nbcore) galcin.py (path) (filename) \n"
+                                                   "\n\tOutput are written in a directory where the YAML file is,"
+                                                   "\n\tthe directory name is:  (method)_(model)_(paramfix)",
                                      formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('path', help="path to the directory where YAML file is")
     parser.add_argument('filename', help="Name of the YAML file which contain all parameters")
-    parser.add_argument('-h')
     args = parser.parse_args()
 
     galcin(path=args.path, filename=args.filename, rank=rank)
