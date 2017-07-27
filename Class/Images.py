@@ -1,7 +1,10 @@
 import numpy as np
 from astropy.io import fits
 from scipy.interpolate import interp2d
-import Tools.tools as tools
+from Tools import calculus
+import logging
+
+logger = logging.getLogger('__galcin__')
 
 
 class Image:
@@ -20,6 +23,9 @@ class Image:
             self.length = self.header['NAXIS2']
             self.size = np.array(np.shape(self.data))
             self.len = self.length*self.high
+            self.pix_size_1 = 0
+            self.pix_size_2 = 0
+            self.calc_pix_size()
             self.oversample = 1
             if mask is None:
                 self.mask = np.logical_not(np.isnan(self.data))
@@ -48,6 +54,18 @@ class Image:
         """
         self.data = np.nan_to_num(self.data)
 
+    def calc_pix_size(self):
+        try:
+            self.pix_size_1 = np.sqrt(self.header['CD1_1']**2 + self.header['CD1_2'])
+            self.pix_size_2 = np.sqrt(self.header['CD2_1']**2 + self.header['CD2_2'])
+        except KeyError:
+            self.pix_size_1 = self.header['CDELT1']
+            self.pix_size_2 = self.header['CDELT2']
+        logger.debug('pixel size in rad: {} (high) and {} (length)'.format(self.pix_size_1, self.pix_size_2))
+
+    def get_pix_size(self):
+        return np.array([self.pix_size_1, self.pix_size_2])
+
     def get_size(self):
         return self.size
 
@@ -63,22 +81,30 @@ class Image:
     def get_oversamp(self):
         return self.oversample
 
-    def interpolation(self):
+    def interpolation(self, new_size=None):
         """
             Perform an interpolation of the image at higher resolution and stock the new image
 
         """
-        x = np.linspace(0, self.length, self.length)  # + 0.5*self.oversample
-        y = np.linspace(0, self.high, self.high)  # + 0.5*self.oversample
-        new_x = np.linspace(0, self.length, self.length * int(self.oversample))
-        new_y = np.linspace(0, self.high, self.high * int(self.oversample))
+        x = np.linspace(0, self.length, self.length)
+        y = np.linspace(0, self.high, self.high)
+        if new_size is None:
+            new_x = np.linspace(0, self.length, self.length * int(self.oversample))
+            new_y = np.linspace(0, self.high, self.high * int(self.oversample))
+        else:
+            new_x = np.linspace(0, self.length, new_size[0])
+            new_y = np.linspace(0, self.high, new_size[1])
         data = np.reshape(self.data, -1)
 
         func = interp2d(x, y, data, kind='linear', fill_value=0)
         self.data = np.array(func(new_x, new_y)).transpose()
-        self.high *= self.oversample
-        self.length *= self.oversample
-        self.size *= self.oversample
+        if new_size is None:
+            self.high *= self.oversample
+            self.length *= self.oversample
+            self.size *= self.oversample
+        else:
+            self.high, self.length = new_size
+            self.size = new_size
 
     def conv_inter_flux(self, psf):
         """
@@ -86,4 +112,4 @@ class Image:
 
         :param PSF psf: psf object
         """
-        self.data_rebin = tools.rebin_data(psf.convolution(self.data), self.oversample)
+        self.data_rebin = calculus.rebin_data(psf.convolution(self.data), self.oversample)

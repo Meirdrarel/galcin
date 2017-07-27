@@ -9,50 +9,6 @@ import logging
 logger = logging.getLogger('__galcin__')
 
 
-def sky_coord_to_galactic(xc, yc, pa, incl, im_size=None):
-    """
-        Convert position from Sky coordinates to Galactic coordinates
-
-    :param float xc: position of the center in arcsec
-    :param float yc: position of the center in arcsec
-    :param float pa: position angle of the major axis degree
-    :param float incl: inclination of the disk in degree
-    :param ndarray im_size: maximum radius of the scene (arcsec),
-                          im_size should be larger than the slit length + seeing (Default im_size=100)
-    :return list[ndarray, ndarray]: [r, theta]
-    """
-    y, x = np.indices(im_size)
-    den = (y - yc) * math.cos(math.radians(pa)) - (x - xc) * math.sin(math.radians(pa))
-    num = - (x - xc) * math.cos(math.radians(pa)) - (y - yc) * math.sin(math.radians(pa))
-    r = (den ** 2 + (num / math.cos(math.radians(incl))) ** 2) ** 0.5
-    tpsi = num * 1.
-
-    tpsi[np.where(den != 0)] /= den[np.where(den != 0)]  # to avoid a NaN at the center
-    den2 = math.cos(math.radians(incl)) ** 2 + tpsi ** 2
-    sg = np.sign(den)  # sign
-    ctheta = sg * (math.cos(math.radians(incl)) ** 2 / den2) ** 0.5  # azimuth in galaxy plane
-    
-    return [r, ctheta]
-
-
-def rebin_data(data, factor):
-    """
-        Rebin an image.
-
-    example: For rebin an image from 240x240 to 60x60 pixels, factor=5
-
-    :param ndarray data: array to rebin
-    :param int factor: rebin factor
-    """
-    if data.ndim == 2:
-        data2 = data.reshape(int(data.shape[0] / factor), factor, int(data.shape[1] / factor), factor)
-        return data2.mean(1).mean(2)
-
-    if data.ndim == 3:
-        data2 = data.reshape(data.shape[0], int(data.shape[1] / factor), factor, int(data.shape[2] / factor), factor)
-        return data2.mean(2).mean(3)
-
-
 def write_fits(data, filename, config, results, mask=None):
     """
         write data in fits file with model's parameters
@@ -93,7 +49,7 @@ def search_file(path, filename):
                 if root == '':
                     logger.debug("path is '' :"+filename)
                     return filename
-                elif root == path:
+                elif root == path and root is not '.':
                     toreturn = root+filename
                     logger.debug(toreturn)
                     return toreturn
@@ -123,13 +79,14 @@ def make_dir(path, config):
 
     dirname = config['config fit']['method'] + '_' + config['config fit']['model']
 
-    suffix = ''
-    for key in config['init fit']['parname']:
-        if config['init fit'][key]['fixed'] == 1:
-            suffix += key[0]
+    if config['config fit']['method'] != 'multinest':
+        suffix = ''
+        for key in config['init fit']['parname']:
+            if config['init fit'][key]['fixed'] == 1:
+                suffix += key[0]
 
-    if suffix != '':
-        dirname += '_'+suffix
+        if suffix != '':
+            dirname += '_'+suffix
 
     if os.path.isdir(path+dirname) is False:
         logger.info("\ncreate directory {}".format(dirname))

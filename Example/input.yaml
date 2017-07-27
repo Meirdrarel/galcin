@@ -6,27 +6,27 @@ gal name: test
 #In this section write the name of fits' files from the directory which contain this file
 #The program can search file in subdirectories
 files:
-    flux: flux_HD.fits
-    vel: vel.fits
-    errvel: evel.fits
-    disp:
-    psf:
+  flux: flux.fits
+  vel: vel.fits
+  errvel: evel.fits
+  disp:
+  psf:
 #This section is to set parameters needed by the model used
 init fit:
   #Inside 'parname' write the parameters which used by the model in the same order than you declared your model
   parname: ['xc', 'yc', 'pa', 'inc', 'vs', 'vm', 'rt']
-  #For each parameters, set the initial 'value', 'limits' and if is 'fixed' (1) or not (0)
+  #For each parameters, set the initial 'value', 'limits' and if is 'fixed' (1) or not (0) only for mpfit
   #The order of parameters is no important
   xc:
    desc: center abscissa in pixel
    value: 14.8
    limits: [10, 20]
-   fixed: 1
+   fixed: 0
   yc:
    desc: center ordinate in pixel
    value: 14.9
    limits: [10, 20]
-   fixed: 1
+   fixed: 0
   pa:
    desc: positon angle in degree
    value: 0
@@ -36,7 +36,7 @@ init fit:
    desc: inclination in degree
    value: 45
    limits: [10, 80]
-   fixed: 1
+   fixed: 0
   vs:
    desc: systemic velocity in km/s
    value: 0
@@ -54,18 +54,26 @@ init fit:
    fixed: 0
 #This section is for parameters of the model which are not fitted
 conf model:
-  sig: 40
+  sig: 20 # in km/s
   slope: 0
-  psfx: 3.5
-  psfz: 49
+  psfx: 3.5 #in pixel of the lowest resolution
+  psfz: 2.5 #in pixel in the spectral dimension
   smooth: 0
 #Selection the 'model' wanted, the 'method' and others things about the running of the program
 config fit:
-  model: flat
+  model: exp
   method: mpfit
   verbose: False
   #parameters about PyMultiNest running
   PyMultiNest:
-    nbp: 0
+    max iter: 0 # set to 0 for unlimited number of iteration
+    nb live pts: 50 # default is 50
+    samp eff: 0.8 # default is 0.8
+    evi tol: 0.5 # default is 0.5
     plt stats: False
     plt xy: True
+  mpfit:
+    ftol: 1.e-10
+    gtol: 1.e-10
+    xtol: 1.e-10
+    # default is 1e-10 for all, yaml specification need to have a float for scientific notation

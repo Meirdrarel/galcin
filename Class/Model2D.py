@@ -1,6 +1,6 @@
 import math
 import numpy as np
-import Tools.tools as tools
+from Tools import calculus
 from Class.PSF import PSF
 from Class.Images import Image
 
@@ -67,7 +67,7 @@ class Model2D:
         self.model_vm = vm
         self.model_vs = vs
         self.model_rt = rt*self.flux.get_oversamp()
-        self.model_radius, self.model_theta = tools.sky_coord_to_galactic(self.model_xc, self.model_yc, self.model_pa, self.model_incl,
+        self.model_radius, self.model_theta = calculus.sky_coord_to_galactic(self.model_xc, self.model_yc, self.model_pa, self.model_incl,
                                                                           im_size=np.shape(self.vel_map_hd))
 
     def get_parameter(self):
@@ -100,7 +100,7 @@ class Model2D:
 
         self.vel_map_hd = self.disk_velocity()
 
-        vel_times_flux = tools.rebin_data(self.psf.convolution(self.flux.data * self.vel_map_hd), self.flux.get_oversamp())
+        vel_times_flux = calculus.rebin_data(self.psf.convolution(self.flux.data * self.vel_map_hd), self.flux.get_oversamp())
 
         self.vel_map[self.vel.mask] = vel_times_flux[self.vel.mask] / self.flux.data_rebin[self.vel.mask]
 
@@ -129,11 +129,11 @@ class Model2D:
 
         sig = self.linear_velocity_dispersion()
 
-        term1[self.vel.mask] = tools.rebin_data(self.psf.convolution(sig ** 2 * self.flux.data), self.flux.oversample)[self.vel.mask] \
+        term1[self.vel.mask] = calculus.rebin_data(self.psf.convolution(sig ** 2 * self.flux.data), self.flux.oversample)[self.vel.mask] \
                                / self.flux.data_rebin[self.vel.mask]
-        term2[self.vel.mask] = tools.rebin_data(self.psf.convolution(self.vel_map_hd ** 2 * self.flux.data), self.flux.oversample)[self.vel.mask] \
+        term2[self.vel.mask] = calculus.rebin_data(self.psf.convolution(self.vel_map_hd ** 2 * self.flux.data), self.flux.oversample)[self.vel.mask] \
                                / self.flux.data_rebin[self.vel.mask]
-        term3[self.vel.mask] = (tools.rebin_data(self.psf.convolution(self.vel_map_hd * self.flux.data), self.flux.oversample)[self.vel.mask] /
+        term3[self.vel.mask] = (calculus.rebin_data(self.psf.convolution(self.vel_map_hd * self.flux.data), self.flux.oversample)[self.vel.mask] /
                                 self.flux.data_rebin[self.vel.mask]) ** 2
 
         self.vel_disp = np.sqrt(term1 + term2 - term3)

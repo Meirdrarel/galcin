@@ -1,5 +1,5 @@
 import numpy as np
-import Tools.tools as tools
+from Tools import calculus
 
 
 def flat_disk_intensity(xc, yc, pa, incl, rd, center_bright, rtrunc, im_size):
@@ -15,7 +15,7 @@ def flat_disk_intensity(xc, yc, pa, incl, rd, center_bright, rtrunc, im_size):
     :param ndarray im_size:
     """
 
-    r, theta = tools.sky_coord_to_galactic(xc, yc, pa, incl, im_size=im_size)
+    r, theta = calculus.sky_coord_to_galactic(xc, yc, pa, incl, im_size=im_size)
 
     flux = np.zeros(np.shape(r))
 
@@ -38,7 +38,7 @@ def exponential_disk_intensity(xc, yc, pa, incl, rd, center_bright, rtrunc, im_s
     :param float rtrunc: 
     :param ndarray im_size:
     """
-    r, theta = tools.sky_coord_to_galactic(xc, yc, pa, incl, im_size=im_size)
+    r, theta = calculus.sky_coord_to_galactic(xc, yc, pa, incl, im_size=im_size)
 
     if rd != 0:
         flux = center_bright * np.exp(- np.abs(r) / rd)

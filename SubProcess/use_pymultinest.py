@@ -13,7 +13,7 @@ import logging
 logger = logging.getLogger('__galcin__')
 
 
-def use_pymultinest(model, params, quiet=True, nbp=0, pltstats=False, rank=0, path=None, whd=None):
+def use_pymultinest(model, params, confmeth, quiet=True, pltstats=False, rank=0, path=None, whd=None):
     """
 
         Function which define the parameters's space, call PyMultiNest and perform the analysis of the results
@@ -21,12 +21,33 @@ def use_pymultinest(model, params, quiet=True, nbp=0, pltstats=False, rank=0, pa
     :param Model2D model: model initialized
     :param dict params: dictionary which contain all parameters with the limits and if are fixed or not
     :param bool quiet: print or not verbose from the fit method
-    :param int nbp: number of points calculated by MultiNest, set to 0 for unlimited
+    :param dict confmeth: dictionary with method parameters
     :param bool pltstats: create a pdf file with plots of probabilities of parameters
     :param int rank: the rank of the thread (needed whe you use MPI4PY with more than 1 core)
     :param str path: the relative of the directory where PyMultiNest can write files needed for the further analysis
     :param string whd: suffix for filename if a high resolution map is used
     """
+
+    # Define default parameters for PyMultiNest
+    if confmeth['nb live pts'] or confmeth['nb live pts'] is None:
+        n_live_points = 50
+    else:
+        n_live_points = confmeth['nb live pts']
+
+    if confmeth['max iter'] or confmeth['max iter'] is None:
+        max_iter = 0
+    else:
+        max_iter = confmeth['max iter']
+
+    if confmeth['samp eff'] or confmeth['samp eff'] is None:
+        sampling_efficiency = 0.8
+    else:
+        sampling_efficiency = confmeth['samp eff']
+
+    if confmeth['evi tol'] or confmeth['evi tol'] is None:
+        evidence_tolerance = 0.5
+    else:
+        evidence_tolerance = confmeth['evi tol']
 
     def prior(cube, ndim, nparams):
         """
@@ -37,18 +58,17 @@ def use_pymultinest(model, params, quiet=True, nbp=0, pltstats=False, rank=0, pa
         :param int ndim: number of dimension if different of the number of parameters
         :param int nparams: number of parameters
         """
-        if nparams == 7:
-            for i in range(nparams):
-                limits = params[params['parname'][i]]['limits']
-                cube[i] = cube[i] * (limits[1] - limits[0]) + limits[0]
+        for i in range(nparams):
+            limits = params[params['parname'][i]]['limits']
+            cube[i] = cube[i] * (limits[1] - limits[0]) + limits[0]
 
     if rank == 0:
         t1 = time.time()
 
     # ### Call PyMultiNest
-    pymultinest.run(model.log_likelihood, prior, len(params['parname']), outputfiles_basename=path+'/res'+whd+'_', resume=False, verbose=quiet, max_iter=nbp,
-                    n_live_points=50, sampling_efficiency=0.8, evidence_tolerance=0.5, n_iter_before_update=100, null_log_evidence=-1e90,
-                    max_modes=100, mode_tolerance=-1e60)
+    pymultinest.run(model.log_likelihood, prior, len(params['parname']), outputfiles_basename=path+'/res'+whd+'_', resume=False, verbose=quiet,
+                    max_iter=max_iter, n_live_points=n_live_points, sampling_efficiency=sampling_efficiency, evidence_tolerance=evidence_tolerance,
+                    n_iter_before_update=100, null_log_evidence=-1e90, max_modes=100, mode_tolerance=-1e60)
     # ###
 
     if rank == 0:

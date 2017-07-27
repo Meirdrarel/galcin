@@ -48,5 +48,5 @@ def arctan_velocity(r, rt, vm):
 
     return 2*vm/np.pi*np.arctan(2*r/rt)
 
-# Must be at th end of the file
-list_model = {'exp': exponential_velocity, 'flat': flat_velocity, 'arctan': arctan_velocity}
+# Must be at the end of the file
+vel_list = {'exp': exponential_velocity, 'flat': flat_velocity, 'arctan': arctan_velocity}

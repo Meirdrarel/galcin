@@ -9,20 +9,36 @@ import logging
 logger = logging.getLogger('__galcin__')
 
 
-def use_mpfit(model, params, quiet=False):
+def use_mpfit(model, params, confmeth, quiet=False):
     """
         Function call MPFIt to perform the fit of the model
 
     :param Model2D model: model initialised
     :param dict params: dictionary which contain all parameters with the limits and if are fixed or not
+    :param dict confmeth: dictionary with method parameters
     :param Bool quiet: print or not verbose from the fit method
     """
+    logger.debug(confmeth)
+    if confmeth['ftol'] and confmeth['ftol'] is None:
+        ftol = 1e-10
+    else:
+        ftol = confmeth['ftol']
+
+    if confmeth['gtol'] and confmeth['gtol'] is None:
+        gtol = 1e-10
+    else:
+        gtol = confmeth['gtol']
+
+    if confmeth['xtol'] and confmeth['xtol'] is None:
+        xtol = 1e-10
+    else:
+        xtol = confmeth['xtol']
 
     if quiet is True:
         verbose = 0
     else:
         verbose = 1
-
+    logger.debug('ftol: {} \tgtol: {} \txtol: {}'.format(ftol, gtol, xtol))
     # create the array of dictionary 'parinfo' needed by mpfit
     p0 = [params[key] for key in params['parname']]
     parinfo = [{'value': 0., 'fixed': 0, 'limited': [1, 1], 'limits': [0., 0.], 'parname': 0., 'step': 0.} for i in range(len(p0))]
@@ -40,7 +56,7 @@ def use_mpfit(model, params, quiet=False):
     t1 = time.time()
 
     # ###  Call mpfit
-    model_fit = mpfit.mpfit(model.least_square, parinfo=parinfo, autoderivative=1, gtol=1e-10, ftol=1e-10, xtol=1e-10, quiet=verbose)
+    model_fit = mpfit.mpfit(model.least_square, parinfo=parinfo, autoderivative=1, gtol=gtol, ftol=ftol, xtol=xtol, quiet=verbose)
     # ###
 
     t2 = time.time()

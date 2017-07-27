@@ -11,3 +11,6 @@ __pycache__
 /Class/Model3D.py
 /SubProcess/create_cube.py
 /program_old/
+/Example/header.py
+/Example/mpfit_flat/
+/Example/mpfit_exp/
