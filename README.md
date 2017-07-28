@@ -33,9 +33,14 @@ galcin.py path filename
 ```
 or in an python script/console by importing first and call the main function
 ```
-import galcin.py
+import galcin
     
 galcin.galcin(path, filename, rank=0)
+```
+```
+from galcin import galcin
+    
+galcin(path, filename, rank=0)
 ```
 
 where path can be absolute or relative, filename is the name of the **YAML** configuration file. The parameter rank is the id of the thread.
@@ -48,6 +53,7 @@ To execute the program with **mpi4py**:
 ```
 mpiexec -n (nbcore) galcin.py path filename
 ```
+
 ## Output
 
 Outputs are written in a directory where the **YAML** config file is. The name of the directory depend of the method, the model and fixed paramters like: 
