@@ -1,7 +1,7 @@
 import math
 import numpy as np
 import sys
-
+from Class.Images import Image
 import logging
 
 logger = logging.getLogger('__galcin__')
@@ -53,22 +53,22 @@ def rebin_data(data, factor):
 
 def compar_resolution(flux, vel, oversamp=None):
     """
+        Compare the resolution between the flux and the velocity,
+        perform an interpolation of the flux if needed
 
-    :param flux:
-    :param vel:
-    :return:
+    :param Image flux:
+    :param Image vel:
+    :return str: suffix for filenames
     """
     rap_size = flux.get_pix_size()/vel.get_pix_size()
     logger.debug('rapport of size is {}'.format(rap_size))
     if rap_size[0] == rap_size[1]:
         logger.debug('images are square')
         if np.array_equal(rap_size, [1, 1]):
-            logger.info('images have the same resolution')
-            logger.info('export oversampling parameter in yaml file')
+            logger.debug('images have the same resolution')
             flux.set_oversamp(oversamp)
             flux.interpolation()
             whd = ''
-            # pass
         elif float(rap_size[0]).is_integer() and float(rap_size[1]).is_integer():
             logger.debug('the factor is an integer')
             flux.set_oversamp(int(rap_size[0]))

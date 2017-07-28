@@ -18,7 +18,6 @@ def use_mpfit(model, params, confmeth, quiet=False):
     :param dict confmeth: dictionary with method parameters
     :param Bool quiet: print or not verbose from the fit method
     """
-    logger.debug(confmeth)
     if confmeth['ftol'] and confmeth['ftol'] is None:
         ftol = 1e-10
     else:
@@ -38,7 +37,7 @@ def use_mpfit(model, params, confmeth, quiet=False):
         verbose = 0
     else:
         verbose = 1
-    logger.debug('ftol: {} \tgtol: {} \txtol: {}'.format(ftol, gtol, xtol))
+
     # create the array of dictionary 'parinfo' needed by mpfit
     p0 = [params[key] for key in params['parname']]
     parinfo = [{'value': 0., 'fixed': 0, 'limited': [1, 1], 'limits': [0., 0.], 'parname': 0., 'step': 0.} for i in range(len(p0))]

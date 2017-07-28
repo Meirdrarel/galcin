@@ -26,7 +26,7 @@ except ImportError:
     pass
 
 # For debug use logging.DEBUG instead of logging.INFO
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('__galcin__')
 
 
@@ -82,17 +82,15 @@ def galcin(path=None, filename=None, rank=0):
 
     ###################################################################################################
     # Test the size of the flux image with de velocity field and perform an interpolation if is needed
-    whd = calculus.compar_resolution(flux, vel, oversamp=int(np.ceil(8 / params0['rt']['value'])))
+    if config['config fit']['oversamp'] or config['config fit']['oversamp'] is None:
+        oversamp = 4
+    else:
+        oversamp = config['config fit']['oversamp']
+    whd = calculus.compar_resolution(flux, vel, oversamp=oversamp)
     ###################################################################################################
 
     # Check psf file existence and import it or create a gaussian
-    img_psf = None
-    if files['psf'] is not None:
-        img_psf = fits.getdata(io_stream.search_file(path, files['psf']))
-        logger.debug('import psf from {}'.format(io_stream.search_file(path, files['psf'])))
-    else:
-        logger.debug('2D gaussian with fwhm={} pixels in high resolution'.format(np.sqrt(confmod['psfx']**2+confmod['smooth']**2)*flux.get_oversamp()))
-    psf = PSF(flux, img_psf=img_psf, fwhm_lr=confmod['psfx'], smooth=confmod['smooth'])
+    psf = PSF(flux, psf_file=files['psf'], path=path, fwhm_lr=confmod['psfx'], smooth=confmod['smooth'])
 
     # Do the convolution and the rebinning of the high resolution flux
     flux.conv_inter_flux(psf)

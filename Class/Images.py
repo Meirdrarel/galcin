@@ -61,7 +61,7 @@ class Image:
         except KeyError:
             self.pix_size_1 = self.header['CDELT1']
             self.pix_size_2 = self.header['CDELT2']
-        logger.debug('pixel size in rad: {} (high) and {} (length)'.format(self.pix_size_1, self.pix_size_2))
+        logger.debug('PSF : pixel size in rad: {} (high) and {} (length)'.format(self.pix_size_1, self.pix_size_2))
 
     def get_pix_size(self):
         return np.array([self.pix_size_1, self.pix_size_2])

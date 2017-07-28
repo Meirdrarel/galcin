@@ -64,6 +64,7 @@ config fit:
   model: exp
   method: mpfit
   verbose: False
+  oversamp:   # oversampling factor for the interpolation
   #parameters about PyMultiNest running
   PyMultiNest:
     max iter: 0 # set to 0 for unlimited number of iteration
