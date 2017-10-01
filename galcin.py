@@ -35,7 +35,7 @@ def galcin(path=None, filename=None, rank=0):
         (name not found) fit model to velocity field of galaxies.
         For more information see the help or refer to the git repository:
 
-            https://github.com/Meirdrarel/batman
+            https://github.com/Meirdrarel/galcin
 
         developed on python 3.6
 
@@ -132,7 +132,7 @@ def galcin(path=None, filename=None, rank=0):
         io_stream.write_fits(model.vel_disp, out_path+'/modd'+whd, config, results, mask=vel.mask)
 
         if files['disp'] is not None:
-            io_stream.write_fits(*results['params'], confmod['sig'], disp.data - model.vel_disp, out_path+'/resd'+whd, mask=vel.mask)
+            io_stream.write_fits(disp.data - model.vel_disp, out_path+'/resd'+whd, config, results, mask=vel.mask)
 
         io_stream.write_yaml(out_path, results, config['gal name'], whd=whd)
 
